@@ -1,0 +1,74 @@
+//
+// Created by felix on 29/09/2018.
+//
+
+#ifndef GRASSLANDS_MESHBUFFER_H
+#define GRASSLANDS_MESHBUFFER_H
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm.hpp>
+#include <vector>
+#include "glTypes.h"
+
+struct vertexData {
+    vertexData(const glm::vec3& p, const glm::vec3& n, const glm::vec2& t);
+
+    GLfloat position[3];
+    Vec3Int normal;
+    GLushort texcoords[2];
+
+};
+
+class MeshBuffer;
+class Mesh {
+    friend class MeshBuffer;
+public:
+
+    GLuint first;
+    GLuint elementCount;
+    GLuint baseVertex;
+
+    const MeshBuffer* buffer;
+
+    void setVertexData(const std::vector<vertexData>& data);
+    void setElementData(const std::vector<GLushort>& elements);
+
+private:
+    Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex);
+};
+
+
+class MeshBuffer {
+    friend class Mesh;
+public:
+
+    MeshBuffer();
+
+    Mesh getMesh(GLint elementCount, GLint vertexCount);
+    Mesh getMesh(const std::vector<vertexData>& vertexData, const std::vector<GLushort>& elements);
+
+    void bindVa() const;
+
+private:
+
+    GLint nextFirst = 0;
+    GLint nextBaseVertex = 0;
+
+
+    GLuint vertexArray;
+
+    union {
+        GLuint bufferObjects[2];
+        struct {
+            GLuint vertexBuffer;
+            GLuint elementBuffer;
+        };
+    };
+
+};
+
+
+
+
+#endif //GRASSLANDS_MESHBUFFER_H
