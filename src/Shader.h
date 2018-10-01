@@ -38,6 +38,7 @@ public:
 private:
     static void testShader(GLuint shader);
 
+    static void testLink(GLuint program);
     GLuint program;
 
 };

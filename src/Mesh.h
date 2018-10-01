@@ -29,7 +29,7 @@ public:
     GLuint elementCount;
     GLuint baseVertex;
 
-    const MeshBuffer* buffer;
+    MeshBuffer* const buffer;
 
     void setVertexData(const std::vector<vertexData>& data);
     void setElementData(const std::vector<GLushort>& elements);
@@ -44,6 +44,7 @@ class MeshBuffer {
 public:
 
     MeshBuffer();
+    ~MeshBuffer();
 
     Mesh getMesh(GLint elementCount, GLint vertexCount);
     Mesh getMesh(const std::vector<vertexData>& vertexData, const std::vector<GLushort>& elements);
@@ -59,8 +60,9 @@ private:
     GLuint vertexArray;
 
     union {
-        GLuint bufferObjects[2];
+        GLuint bufferObjects[3];
         struct {
+            GLuint idBuffer;
             GLuint vertexBuffer;
             GLuint elementBuffer;
         };

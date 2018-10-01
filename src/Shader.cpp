@@ -28,6 +28,8 @@ Shader::Shader(const std::string &vertexSource, const std::string &fragmentSourc
     glAttachShader(program, fragmentShader);
     glLinkProgram(program);
 
+    testLink(program);
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 }
@@ -39,6 +41,18 @@ void Shader::testShader(GLuint shader) {
         std::cout << "Could not compile shader" << std::endl;
         char error[2048];
         glGetShaderInfoLog(shader, sizeof(error), nullptr, error);
+        std::cout << error << std::endl;
+    }
+}
+
+
+void Shader::testLink(GLuint program) {
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if (status != GL_TRUE) {
+        std::cout << "Could not link shader" << std::endl;
+        char error[2048];
+        glGetProgramInfoLog(program, sizeof(error), nullptr, error);
         std::cout << error << std::endl;
     }
 }
@@ -71,6 +85,7 @@ Shader &Shader::operator=(Shader &&other) noexcept {
     }
     return *this;
 }
+
 
 
 //region uniform specializations

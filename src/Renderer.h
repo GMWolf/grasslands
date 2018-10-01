@@ -8,6 +8,8 @@
 #include <vector>
 #include "Shader.h"
 #include "Mesh.h"
+#include "Texture.h"
+#include <glm.hpp>
 
 struct DrawElementsIndirectCommand{
     GLuint count;
@@ -18,14 +20,25 @@ struct DrawElementsIndirectCommand{
 };
 
 struct ModelBatch {
-    explicit ModelBatch(const MeshBuffer* buffer);
-    const MeshBuffer* meshBuffer;
+    explicit ModelBatch( MeshBuffer*const buffer, TextureArray* const array);
+    MeshBuffer* const meshBuffer;
+    TextureArray* const textureArray;
 
     GLuint maxCommandCount;
-    GLuint indirectBuffer;
     GLuint commandCount;
 
+    union {
+        GLuint bufferObjects[3];
+        struct {
+            GLuint indirectBuffer;
+            GLuint textureIndexBuffer;
+            GLuint modelMatrixBuffer;
+        };
+    };
+
     DrawElementsIndirectCommand* commands;
+    GLuint *textureIndices;
+    glm::mat4 *modelMatrices;
 };
 
 class Renderer {
@@ -35,7 +48,7 @@ public:
     Renderer();
 
 
-    void submit(Mesh& mesh);
+    void submit(const Mesh &mesh, const Texture &texture, const glm::mat4 &transform);
 
     void renderBatches();
 
@@ -45,7 +58,7 @@ private:
 
     void clearBatches();
 
-    ModelBatch& getBatch(const MeshBuffer* buffer);
+    ModelBatch& getBatch(MeshBuffer *const buffer, TextureArray* const array);
 
     std::vector<ModelBatch> batches;
     Shader* shader;

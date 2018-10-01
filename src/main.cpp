@@ -8,7 +8,7 @@
 #include "Shader.h"
 #include "Renderer.h"
 #include <gtc/matrix_transform.hpp>
-
+#include "Texture.h"
 
 
 void error_callback(int error, const char *description) {
@@ -28,6 +28,14 @@ void GLAPIENTRY MessageCallback( GLenum source,
              type, severity, message );
 }
 
+bool shouldClose = false;
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        shouldClose = true;
+    }
+}
+
 
 
 int main() {
@@ -41,14 +49,20 @@ int main() {
 
     GLFWwindow* window;
 
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    window = glfwCreateWindow(1280, 720, "Grasslands", NULL, NULL);
+    //glfwGetPrimaryMonitor()
+    window = glfwCreateWindow(1280, 720, "Grasslands",  NULL, NULL);
+
+    glfwSwapInterval(0);
 
     if (!window) {
         glfwTerminate();
         return -1;
     }
+
+    glfwSetKeyCallback(window, key_callback);
 
     glfwMakeContextCurrent(window);
 
@@ -60,11 +74,14 @@ int main() {
 
 
     MeshBuffer meshBuffer;
+    TextureGroup group;
 
     Mesh suzane = ObjLoader::load(meshBuffer, "../suzane.obj");
     std::cout << suzane.elementCount << std::endl;
 
-    GLuint tex = loadDDS("../texture.dds");
+    Texture tex = loadDDS(group, "../texture.dds");
+    Texture tex2 = loadDDS(group, "../diffuse_1.DDS");
+
 
 
     std::vector<vertexData> vertices = {
@@ -81,7 +98,7 @@ int main() {
 
     Renderer renderer;
 
-    while(!glfwWindowShouldClose(window)) {
+    while(!(glfwWindowShouldClose(window) || shouldClose)) {
         glClearColor(1,1,1,1);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -93,15 +110,17 @@ int main() {
         //projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 100.f);
         projection = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
 
-        glBindTextureUnit(0, tex);
+        tex.textureArray->bind(0);
+
         meshBuffer.bindVa();
 
         renderer.setProjection(projection);
 
-        renderer.submit(suzane);
-        renderer.submit(rect);
+        renderer.submit(suzane, tex2, glm::translate(glm::mat4(1.0), glm::vec3(1, 0, 0)));
+        renderer.submit(rect, tex, glm::mat4(1));
 
         renderer.renderBatches();
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();

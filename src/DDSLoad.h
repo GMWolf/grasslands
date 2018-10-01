@@ -11,11 +11,11 @@
 #include <iostream>
 #include <fstream>
 #include <ios>
+#include "Texture.h"
 
 
 
-
-GLuint loadDDS(const std::string filename);
+Texture loadDDS(TextureGroup& group, const std::string filename);
 
 
 #endif //GRASSLANDS_DDSLOAD_H

@@ -15,15 +15,24 @@
 #define FOURCC_DXT5 (MakeFourCC('D','X','T','5'))
 
 
+GLubyte defaultTexels[16] = {
+        0, 0, 0, 255,
+        255, 0, 0, 255,
+        0, 255, 0, 255,
+        0, 0, 255, 255
+};
+
 //http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#using-the-compressed-texture
-GLuint loadDDS(const std::string filename) {
+Texture loadDDS(TextureGroup& group, const std::string filename) {
 
     std::ifstream file;
     file.open(filename, std::ios::in | std::ios::binary);
 
     if (!file.is_open()) {
         std::cout << "Could not open file " << filename << std::endl;
-        return 0;
+        Texture tex = group.getArray(2,2,1,GL_RGB8).getTexture();
+        tex.setData(0, GL_RGBA, 0, 0, 2, 2, GL_UNSIGNED_BYTE, defaultTexels);
+        return tex;
     }
 
     char filecode[4];
@@ -31,7 +40,9 @@ GLuint loadDDS(const std::string filename) {
     if(strncmp(filecode, "DDS ", 4) != 0) {
         file.close();
         std::cout << "Filecode does not match for file " << filename << std::endl;
-        return 0;
+        Texture tex = group.getArray(2,2,1,GL_RGB8).getTexture();
+        tex.setData(0, GL_RGBA, 0, 0, 2, 2, GL_UNSIGNED_BYTE, defaultTexels);
+        return tex;
     }
 
     //Read header
@@ -44,7 +55,6 @@ GLuint loadDDS(const std::string filename) {
     linearSize = *(unsigned int*)&(header[16]);
     mipMapCount = *(unsigned int*)&(header[24]);
     fourCC = *(unsigned int*)&(header[80]);
-
 
     //Buffer data
     unsigned char* buffer;
@@ -71,12 +81,14 @@ GLuint loadDDS(const std::string filename) {
         default:
             free(buffer);
             std::cout << "Unknown dds format: " << fourCC << std::endl;
-            return false;
+            Texture tex = group.getArray(2,2,1,GL_RGB8).getTexture();
+            tex.setData(0, GL_RGBA, 0, 0, 2, 2, GL_UNSIGNED_BYTE, defaultTexels);
+            return tex;
     }
 
-    GLuint textureID;
-    glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
-    glTextureStorage2D(textureID, mipMapCount, format, width, height);
+
+    Texture texture = group.getArray(width, height, mipMapCount, format).getTexture();
+
 
     const unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
     unsigned int offset = 0;
@@ -84,7 +96,7 @@ GLuint loadDDS(const std::string filename) {
     //Load each mipmap
     for(unsigned int level = 0; level < mipMapCount && (width || height); ++level) {
         unsigned int size  = ((width +3)/4)*((height +3)/4) * blockSize;
-        glCompressedTextureSubImage2D(textureID, level, 0, 0, width, height, format, size, buffer + offset);
+        texture.setCompressedData(level, format, 0, 0, width, height, size, buffer + offset);
         offset += size;
         width /= 2;
         height /= 2;
@@ -92,6 +104,6 @@ GLuint loadDDS(const std::string filename) {
 
     free(buffer);
 
-    return textureID;
+    return texture;
 
 }
