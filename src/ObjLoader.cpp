@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <glm.hpp>
+#include <algorithm>
 
 
 Mesh ObjLoader::load(MeshBuffer &buffer, const std::string &filename) {
@@ -64,12 +65,26 @@ Mesh ObjLoader::load(MeshBuffer &buffer, const std::string &filename) {
 
 void ObjLoader::addVertex(const ObjLoader::vertex &v, std::vector<ObjLoader::vertex> &data,
                           std::vector<GLushort> &elements) {
-    elements.emplace_back(data.size());
-    data.emplace_back(v);
+
+    auto s = std::find(data.begin(), data.end(), v);
+    if(s != data.end()) {
+        elements.emplace_back(std::distance(data.begin(), s));
+    } else {
+        elements.emplace_back(data.size());
+        data.emplace_back(v);
+    }
+
+
 }
 
 std::istream &operator>>(std::istream &is, ObjLoader::vertex &rhs) {
     char bin;
     is >> rhs.pos >> bin >> rhs.uv >> bin >> rhs.normal;
     return is;
+}
+
+void ObjLoader::optimizeElements(const std::vector<GLushort> &elements) {
+
+
+
 }

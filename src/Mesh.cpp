@@ -13,8 +13,8 @@ vertexData::vertexData(const glm::vec3 &p, const glm::vec3 &n, const glm::vec2 &
     texcoords[1] = t[1] * 0xFFFF;
 }
 
-Mesh::Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex) :
-        buffer(buffer), first(first), elementCount(elementCount), baseVertex(baseVertex) {
+Mesh::Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount) :
+        buffer(buffer), first(first), elementCount(elementCount), baseVertex(baseVertex), vertexCount(vertexCount) {
 }
 
 void Mesh::setVertexData(const std::vector<vertexData>& data) {
@@ -87,7 +87,7 @@ Mesh MeshBuffer::getMesh(GLint elementCount, GLint vertexCount) {
     nextBaseVertex += vertexCount;
 
 
-    return Mesh(this, first, elementCount, baseVertex);
+    return Mesh(this, first, elementCount, baseVertex, vertexCount);
 }
 
 Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertexData, const std::vector<GLushort> &elements) {

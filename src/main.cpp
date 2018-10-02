@@ -9,6 +9,7 @@
 #include "Renderer.h"
 #include <gtc/matrix_transform.hpp>
 #include "Texture.h"
+#include "Transform.h"
 
 
 void error_callback(int error, const char *description) {
@@ -55,7 +56,7 @@ int main() {
     //glfwGetPrimaryMonitor()
     window = glfwCreateWindow(1280, 720, "Grasslands",  NULL, NULL);
 
-    glfwSwapInterval(0);
+
 
     if (!window) {
         glfwTerminate();
@@ -67,6 +68,8 @@ int main() {
     glfwMakeContextCurrent(window);
 
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+
+    glfwSwapInterval(0);
 
     // During init, enable debug output
     glEnable              ( GL_DEBUG_OUTPUT );
@@ -98,28 +101,41 @@ int main() {
 
     Renderer renderer;
 
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+
+
+
+
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
         glClearColor(1,1,1,1);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         float ratio = width / (float) height;
 
         glm::mat4 projection;
-        //projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 100.f);
-        projection = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+        projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 100.f);
+        glm::mat4 camera = glm::lookAt(glm::vec3(0, 0, 30), glm::vec3(0,0,0), glm::vec3(0,1,0));
+        //projection = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
 
-        tex.textureArray->bind(0);
+        renderer.setProjection(projection * camera);
 
-        meshBuffer.bindVa();
+        //submit a lot of suzanes
+        for(int i = -5; i < 5; i++)
+            for(int j = -5; j < 5; j++)
+                for(int k = -5; k < 5; k++) {
+                    Texture& t = i+j+k % 2 == 0 ? tex : tex2;
 
-        renderer.setProjection(projection);
+                    Transform transform;
+                    transform.pos = glm::vec3(i, j, k) * 3.0f;
+                    transform.scale = 1;
+                    transform.rot = glm::quat(glm::vec3(0,0,0));
+                    renderer.submit(suzane, t, transform);
+                }
 
-        renderer.submit(suzane, tex2, glm::translate(glm::mat4(1.0), glm::vec3(1, 0, 0)));
-        renderer.submit(rect, tex, glm::mat4(1));
-
-        renderer.renderBatches();
+        renderer.flushBatches();
 
 
         glfwSwapBuffers(window);

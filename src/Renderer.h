@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "Texture.h"
 #include <glm.hpp>
+#include "Transform.h"
 
 struct DrawElementsIndirectCommand{
     GLuint count;
@@ -27,6 +28,8 @@ struct ModelBatch {
     GLuint maxCommandCount;
     GLuint commandCount;
 
+    GLuint instanceCount;
+
     union {
         GLuint bufferObjects[3];
         struct {
@@ -38,7 +41,7 @@ struct ModelBatch {
 
     DrawElementsIndirectCommand* commands;
     GLuint *textureIndices;
-    glm::mat4 *modelMatrices;
+    Transform *modelMatrices;
 };
 
 class Renderer {
@@ -48,14 +51,14 @@ public:
     Renderer();
 
 
-    void submit(const Mesh &mesh, const Texture &texture, const glm::mat4 &transform);
+    void submit(const Mesh &mesh, const Texture &texture, const Transform &transform);
 
-    void renderBatches();
+    void flushBatches();
 
     void setProjection(const glm::mat4& proj);
 
 private:
-
+    void renderbatch(ModelBatch& batch);
     void clearBatches();
 
     ModelBatch& getBatch(MeshBuffer *const buffer, TextureArray* const array);

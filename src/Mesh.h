@@ -28,6 +28,7 @@ public:
     GLuint first;
     GLuint elementCount;
     GLuint baseVertex;
+    GLuint vertexCount;
 
     MeshBuffer* const buffer;
 
@@ -35,7 +36,7 @@ public:
     void setElementData(const std::vector<GLushort>& elements);
 
 private:
-    Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex);
+    Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount);
 };
 
 

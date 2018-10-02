@@ -13,15 +13,23 @@
 class ObjLoader {
 
     struct vertex {
+        bool operator==(const vertex& rhs) const {
+            return (pos == rhs.pos) && (uv == rhs.uv) && (normal == rhs.normal);
+        }
         unsigned int pos;
         unsigned int uv;
         unsigned int normal;
     };
+
+
     friend std::istream& operator>>(std::istream& is, vertex& rhs);
 
     static void addVertex(const vertex& v, std::vector<vertex>& data, std::vector<GLushort>& elements);
 
+    static void optimizeElements(const std::vector<GLushort>& elements);
+
 public:
+
 
 
     static Mesh load(MeshBuffer& buffer, const std::string& file);
