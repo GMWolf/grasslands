@@ -11,6 +11,7 @@
 #include "Texture.h"
 #include <glm.hpp>
 #include "Transform.h"
+#include "RenderObject.h"
 
 struct DrawElementsIndirectCommand{
     GLuint count;
@@ -20,15 +21,16 @@ struct DrawElementsIndirectCommand{
     GLuint baseInstance;
 };
 
-struct ModelBatch {
-    explicit ModelBatch( MeshBuffer*const buffer, TextureArray* const array);
-    MeshBuffer* const meshBuffer;
-    TextureArray* const textureArray;
+struct Batch {
+    Batch();
+    ~Batch();
 
-    GLuint maxCommandCount;
-    GLuint commandCount;
+    static const GLuint bufferCount = 3;
+    static const GLuint bufferSize = 1024;
 
-    GLuint instanceCount;
+    GLuint bufferIndex = 0;
+
+    GLuint commandCount = 0;
 
     union {
         GLuint bufferObjects[3];
@@ -39,10 +41,13 @@ struct ModelBatch {
         };
     };
 
-    DrawElementsIndirectCommand* commands;
-    GLuint *textureIndices;
-    Transform *modelMatrices;
+    DrawElementsIndirectCommand* commands[bufferCount];
+    GLuint *textureIndices[bufferCount];
+    Transform *modelMatrices[bufferCount];
+
+    GLsync fences[bufferCount];
 };
+
 
 class Renderer {
 
@@ -50,22 +55,20 @@ public:
 
     Renderer();
 
-
     void submit(const Mesh &mesh, const Texture &texture, const Transform &transform);
+
+    void submit(const RenderObject& robj);
 
     void flushBatches();
 
     void setProjection(const glm::mat4& proj);
 
-private:
-    void renderbatch(ModelBatch& batch);
-    void clearBatches();
+//private:
+    void renderbatch(Batch& batch);
 
-    ModelBatch& getBatch(MeshBuffer *const buffer, TextureArray* const array);
+    Batch batch;
 
-    std::vector<ModelBatch> batches;
     Shader* shader;
-
 };
 
 

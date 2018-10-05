@@ -21,6 +21,7 @@ union Vec3Int{
         x = v.x * 0x1FF;
         y = v.y * 0x1FF;
         z = v.z * 0x1FF;
+		return *this;
     }
 };
 

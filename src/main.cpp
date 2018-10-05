@@ -10,6 +10,7 @@
 #include <gtc/matrix_transform.hpp>
 #include "Texture.h"
 #include "Transform.h"
+#include "Camera.h"
 
 
 void error_callback(int error, const char *description) {
@@ -63,6 +64,9 @@ int main() {
         return -1;
     }
 
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     glfwSetKeyCallback(window, key_callback);
 
     glfwMakeContextCurrent(window);
@@ -100,14 +104,19 @@ int main() {
 
 
     Renderer renderer;
+    Camera camera;
 
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
 
-
-
+    double lastTime = glfwGetTime();
 
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
+
+        double thisTime = glfwGetTime();
+        double dt = thisTime - lastTime;
+        lastTime = thisTime;
+
         glClearColor(1,1,1,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -117,16 +126,18 @@ int main() {
 
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 100.f);
-        glm::mat4 camera = glm::lookAt(glm::vec3(0, 0, 30), glm::vec3(0,0,0), glm::vec3(0,1,0));
-        //projection = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
 
-        renderer.setProjection(projection * camera);
+        camera.update(window, dt);
+        renderer.setProjection(projection * camera.view);
+
+        suzane.buffer->bindVa();
+        tex.textureArray->bind(0);
 
         //submit a lot of suzanes
-        for(int i = -5; i < 5; i++)
+        for(int i = -50; i < 50; i++)
             for(int j = -5; j < 5; j++)
                 for(int k = -5; k < 5; k++) {
-                    Texture& t = i+j+k % 2 == 0 ? tex : tex2;
+                    Texture& t = (i + j + k ) % 2 == 0 ? tex : tex2;
 
                     Transform transform;
                     transform.pos = glm::vec3(i, j, k) * 3.0f;
