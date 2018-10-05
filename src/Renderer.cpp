@@ -30,7 +30,7 @@ void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform 
     command.instanceCount = 1;
     command.firstIndex = mesh.first;
     command.baseVertex = mesh.baseVertex;
-    command.baseInstance = static_cast<GLuint>(batch.commandCount);
+    command.baseInstance = static_cast<GLuint>(batch.bufferIndex * batch.bufferSize + batch.commandCount);
 
 
     //Set texture info
@@ -46,7 +46,18 @@ void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform 
 
 void Renderer::flushBatches() {
 
-        renderbatch(batch);
+
+    GLuint index = batch.bufferIndex;
+    renderbatch(batch);
+    //Wait for last batch to end
+    GLenum timeoutflag;
+    int n = 0;
+    do {
+        //std::cout << "Waiting for last fence " << ++n << std::endl;
+        timeoutflag = glClientWaitSync(batch.fences[index], GL_SYNC_FLUSH_COMMANDS_BIT, 1000);
+    } while(timeoutflag == GL_TIMEOUT_EXPIRED);
+
+
 }
 
 void Renderer::setProjection(const glm::mat4 &proj) {
@@ -76,13 +87,15 @@ void Renderer::renderbatch(Batch &batch) {
 
         batch.commandCount = 0;
         batch.bufferIndex = (batch.bufferIndex + 1) % batch.bufferCount;
+
+        //Wait on next batch to finish
         int n = 0;
         if (batch.fences[batch.bufferIndex]) {
             GLenum timeoutflag;
             do {
                 timeoutflag = glClientWaitSync(batch.fences[batch.bufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 1000);
                 if(timeoutflag != GL_ALREADY_SIGNALED) {
-                    std::cout << "Waiting on fence " << batch.bufferIndex << " " << (++n) << "ms\n";
+                    //std::cout << "Waiting on fence " << batch.bufferIndex << " " << (++n) << "ms\n";
                 }
             } while (timeoutflag == GL_TIMEOUT_EXPIRED);
 
@@ -123,9 +136,9 @@ Batch::Batch(){
 
     //Get offset mappings
     for(int i = 1; i < bufferCount; i++) {
-        commands[i] = commands[0] + bufferSize * i;
-        textureIndices[i] = textureIndices[0] + bufferSize  * i;
-        modelMatrices[i] = modelMatrices[0] + bufferSize  * i;
+        commands[i] = commands[0] + (bufferSize * i);
+        textureIndices[i] = textureIndices[0] + (bufferSize  * i);
+        modelMatrices[i] = modelMatrices[0] + (bufferSize  * i);
     }
 
     //Set fences to nullptr

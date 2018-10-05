@@ -84,7 +84,18 @@ int main() {
     TextureGroup group;
 
     Mesh suzane = ObjLoader::load(meshBuffer, "../suzane.obj");
-    std::cout << suzane.elementCount << std::endl;
+    Mesh knot = ObjLoader::load(meshBuffer, "../knot.obj");
+    Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
+    Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
+
+    Mesh meshes[4] ={
+            suzane, knot, box, gear
+    };
+
+    std::cout << suzane.vertexCount << std::endl;
+    std::cout << knot.vertexCount << std::endl;
+    std::cout << box.vertexCount << std::endl;
+    std::cout << gear.vertexCount << std::endl;
 
     Texture tex = loadDDS(group, "../texture.dds");
     Texture tex2 = loadDDS(group, "../diffuse_1.DDS");
@@ -110,12 +121,14 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     double lastTime = glfwGetTime();
+    float time = 0;
 
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
 
         double thisTime = glfwGetTime();
         double dt = thisTime - lastTime;
         lastTime = thisTime;
+        time += dt;
 
         glClearColor(1,1,1,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -133,21 +146,24 @@ int main() {
         suzane.buffer->bindVa();
         tex.textureArray->bind(0);
 
+        srand(10);
+
+        int halfSize = 15;
         //submit a lot of suzanes
-        for(int i = -50; i < 50; i++)
-            for(int j = -5; j < 5; j++)
-                for(int k = -5; k < 5; k++) {
-                    Texture& t = (i + j + k ) % 2 == 0 ? tex : tex2;
+        for(int i = -halfSize; i < halfSize; i++)
+            for(int j = -halfSize; j < halfSize; j++)
+                for(int k = -halfSize; k < halfSize; k++) {
+                    Texture& t = rand() % 2 == 0 ? tex : tex2;
+                    Mesh& m = meshes[rand() % 4];
 
                     Transform transform;
                     transform.pos = glm::vec3(i, j, k) * 3.0f;
                     transform.scale = 1;
-                    transform.rot = glm::quat(glm::vec3(0,0,0));
-                    renderer.submit(suzane, t, transform);
+                    transform.rot = glm::quat(glm::vec3(0, 5 * time / (11 + j),0));
+                    renderer.submit(m, t, transform);
                 }
 
         renderer.flushBatches();
-
 
         glfwSwapBuffers(window);
         glfwPollEvents();

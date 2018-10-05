@@ -26,7 +26,7 @@ struct Batch {
     ~Batch();
 
     static const GLuint bufferCount = 3;
-    static const GLuint bufferSize = 1024;
+    static const GLuint bufferSize = 2048;
 
     GLuint bufferIndex = 0;
 

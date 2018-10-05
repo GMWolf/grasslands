@@ -8,7 +8,7 @@ vertexData::vertexData(const glm::vec3 &p, const glm::vec3 &n, const glm::vec2 &
     position[0] = p[0];
     position[1] = p[1];
     position[2] = p[2];
-    normal = n;
+    //normal = n;
     texcoords[0] = t[0] * 0xFFFF;
     texcoords[1] = t[1] * 0xFFFF;
 }
@@ -31,7 +31,7 @@ MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
     glCreateVertexArrays(1, &vertexArray);
 
     //Setup storage
-    GLint batchSize = 2048;
+    GLint batchSize = 2048*3;
     GLuint* ids = new GLuint[batchSize];
     for(GLuint i = 0; i < batchSize; i++) {
         ids[i] = i;
