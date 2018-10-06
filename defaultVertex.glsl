@@ -37,6 +37,6 @@ void main()
 
     gl_Position = MVP * vec4((rotate(position, t.rot) * t.scale) + t.pos, 1.0);
     OUT.drawID = drawID;
-    OUT.normal = normal;
+    OUT.normal = rotate(normal, t.rot);
     OUT.texcoord = texcoord;
 }

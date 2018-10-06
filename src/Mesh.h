@@ -8,14 +8,16 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
-#include <gtc/packing.hpp>
+
 #include <vector>
 #include "glTypes.h"
 
 struct vertexData {
     vertexData(const glm::vec3& p, const glm::vec3& n, const glm::vec2& t);
 
-    GLhalf position[4]; //16 * 4 -> 64 //padding for efficiency
+
+    Vec3Half position;
+    GLhalf pad; //16 * 4 -> 64 //padding for efficiency
     Vec3Int normal; //32
     GLushort texcoords[2]; //16 * 2 -> 32
 
@@ -30,6 +32,8 @@ public:
     GLuint elementCount;
     GLuint baseVertex;
     GLuint vertexCount;
+
+    glm::vec3 bboxMin, bboxMax;
 
     MeshBuffer* const buffer;
 

@@ -3,12 +3,11 @@
 //
 
 #include "Mesh.h"
+#include <limits>
 
 vertexData::vertexData(const glm::vec3 &p, const glm::vec3 &n, const glm::vec2 &t) {
-    position[0] = glm::packHalf1x16(p.x);
-    position[1] = glm::packHalf1x16(p.y);
-    position[2] = glm::packHalf1x16(p.z);
-    //normal = n;
+    position = p;
+    normal = n;
     texcoords[0] = t[0] * 0xFFFF;
     texcoords[1] = t[1] * 0xFFFF;
 }
@@ -19,6 +18,17 @@ Mesh::Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex
 
 void Mesh::setVertexData(const std::vector<vertexData>& data) {
     glNamedBufferSubData(buffer->vertexBuffer, baseVertex * sizeof(vertexData), data.size() * sizeof(vertexData), data.data());
+
+    const float inf = std::numeric_limits<float>::infinity();
+    const float ninf = -inf;
+    bboxMax = glm::vec3(ninf, ninf, ninf);
+    bboxMin = glm::vec3(inf, inf, inf);
+    //Calculate bboxN
+    for(const vertexData& v : data) {
+        glm::vec3 pos = v.position;
+        bboxMax = glm::max(bboxMax, pos);
+        bboxMin = glm::min(bboxMin, pos);
+    }
 }
 
 void Mesh::setElementData(const std::vector<GLushort> &elements) {

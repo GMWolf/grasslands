@@ -54,6 +54,7 @@ int main() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+
     //glfwGetPrimaryMonitor()
     window = glfwCreateWindow(1280, 720, "Grasslands",  NULL, NULL);
 
@@ -74,6 +75,7 @@ int main() {
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
     glfwSwapInterval(0);
+
 
     // During init, enable debug output
     glEnable              ( GL_DEBUG_OUTPUT );
@@ -148,7 +150,7 @@ int main() {
 
         srand(10);
 
-        int halfSize = 15;
+        int halfSize = 10;
         //submit a lot of suzanes
         for(int i = -halfSize; i < halfSize; i++)
             for(int j = -halfSize; j < halfSize; j++)

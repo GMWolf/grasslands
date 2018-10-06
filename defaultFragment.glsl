@@ -14,5 +14,6 @@ in Vertex {
 out vec4 outColor;
 void main()
 {
-    outColor = texture(tex, vec3(IN.texcoord, textureIndex[IN.drawID]));
+    float light = dot(IN.normal, -normalize(vec3(0, 1, 1))) * 0.8 + 0.2;
+    outColor = texture(tex, vec3(IN.texcoord, textureIndex[IN.drawID])) * light;
 }
