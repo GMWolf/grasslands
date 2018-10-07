@@ -44,13 +44,13 @@ struct Batch {
             GLuint computeCommandsBuffer;
             GLuint indirectBuffer;
             GLuint textureIndexBuffer;
-            GLuint modelMatrixBuffer;
+            GLuint transformBuffer;
         };
     };
 
     ComputeDispatchCommand* commands[bufferCount];
     GLuint *textureIndices[bufferCount];
-    Transform *modelMatrices[bufferCount];
+    Transform *transforms[bufferCount];
 
     GLsync fences[bufferCount];
 };

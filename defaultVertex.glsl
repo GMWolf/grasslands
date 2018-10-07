@@ -30,10 +30,10 @@ vec3 rotate(vec3 vec, vec4 quat) {
     return vec + quat.w * t + cross(quat.xyz, t);
     //return vec + 2.0 * cross( cross(quat.xyz, vec) + quat.w * vec, quat.xyz);
 }
+
 void main()
 {
     Transform t = ModelTransform[drawID];
-
 
     gl_Position = MVP * vec4((rotate(position, t.rot) * t.scale) + t.pos, 1.0);
     OUT.drawID = drawID;

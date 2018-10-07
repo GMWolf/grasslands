@@ -13,7 +13,6 @@ struct Transform {
     glm::vec3 pos;
     float scale;
     glm::quat rot;
-
 };
 
 #endif //GRASSLANDS_TRANSFORM_H

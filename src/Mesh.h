@@ -26,7 +26,7 @@ struct vertexData {
 struct MeshData {
 
     MeshData(GLuint first, GLuint elementCount, GLuint baseVertex, glm::vec3 bboxMin, glm::vec3 bboxMax) :
-    first(first), elementCount(elementCount), baseVertex(baseVertex)/*, bboxMin(bboxMin), bboxMax(bboxMax)*/ {
+    first(first), elementCount(elementCount), baseVertex(baseVertex), bboxMin(bboxMin), bboxMax(bboxMax) {
     }
 
     glm::vec3 bboxMin; float pad0; //4*4 bytes

@@ -94,6 +94,8 @@ int main() {
             suzane, knot, box, gear
     };
 
+
+
     Texture tex = loadDDS(group, "../texture.dds");
     Texture tex2 = loadDDS(group, "../diffuse_1.DDS");
 
@@ -116,6 +118,7 @@ int main() {
 
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
+    glCullFace(GL_BACK);
 
     double lastTime = glfwGetTime();
     float time = 0;
@@ -123,7 +126,7 @@ int main() {
     std::vector<RenderObject> objects;
     srand(10);
 
-    int halfSize = 10;
+    int halfSize = 15;
     //submit a lot of suzanes
     for(int i = -halfSize; i < halfSize; i++)
         for(int j = -halfSize; j < halfSize; j++)

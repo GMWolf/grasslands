@@ -20,10 +20,10 @@ void Camera::update(GLFWwindow* window, float dt) {
     KEY_UPDATE(GLFW_KEY_UP, upPressed);
     KEY_UPDATE(GLFW_KEY_DOWN, downPressed);
 
-    glm::vec3 translate;
-    translate.x = (rightPressed - leftPressed) * 5.0f * dt;
-    translate.y = 0;
-    translate.z = (upPressed - downPressed) * 5.0f * dt;
+    glm::vec3 translate(0,0,0);
+    translate += glm::vec3(look[0]) * ((rightPressed - leftPressed) * 5.0f * dt);
+    translate +=  glm::vec3(look[2]) * -((upPressed - downPressed) * 5.0f * dt);
+
 
     pos += translate;
 
@@ -35,9 +35,9 @@ void Camera::update(GLFWwindow* window, float dt) {
     oldMouseX = xpos;
     oldMouseY = ypos;
 
-    look = glm::rotate(glm::mat4(1), cdy / 500, glm::vec3(look[0])) * look;
-    look = glm::rotate(look, cdx / 500, glm::vec3(0,0,1));
+    look = glm::rotate(glm::mat4(1), cdy / 500, glm::vec3(-look[0])) * look;
+    look = glm::rotate(look, cdx / 500, glm::vec3(0,-1,0));
 
 
-    view = glm::inverse(glm::translate(look, pos));
+    view = glm::inverse(glm::translate(glm::mat4(1.0), pos) * look);
 }
