@@ -23,10 +23,25 @@ struct vertexData {
 
 };
 
+struct MeshData {
+
+    MeshData(GLuint first, GLuint elementCount, GLuint baseVertex, glm::vec3 bboxMin, glm::vec3 bboxMax) :
+    first(first), elementCount(elementCount), baseVertex(baseVertex)/*, bboxMin(bboxMin), bboxMax(bboxMax)*/ {
+    }
+
+    GLuint first;
+    GLuint elementCount;
+    GLuint baseVertex;
+    /*glm::vec3 bboxMin;
+    glm::vec3 bboxMax;*/
+};
+
 class MeshBuffer;
 class Mesh {
     friend class MeshBuffer;
 public:
+
+    GLuint index;
 
     GLuint first;
     GLuint elementCount;
@@ -41,12 +56,13 @@ public:
     void setElementData(const std::vector<GLushort>& elements);
 
 private:
-    Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount);
+    Mesh(MeshBuffer* buffer, GLuint index, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount);
 };
 
 
 class MeshBuffer {
     friend class Mesh;
+    friend class Renderer;
 public:
 
     MeshBuffer();
@@ -61,16 +77,18 @@ private:
 
     GLint nextFirst = 0;
     GLint nextBaseVertex = 0;
+    GLuint nextMeshIndex = 0;
 
 
     GLuint vertexArray;
 
     union {
-        GLuint bufferObjects[3];
+        GLuint bufferObjects[4];
         struct {
             GLuint idBuffer;
             GLuint vertexBuffer;
             GLuint elementBuffer;
+            GLuint meshDataBuffer;
         };
     };
 

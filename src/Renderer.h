@@ -21,12 +21,18 @@ struct DrawElementsIndirectCommand{
     GLuint baseInstance;
 };
 
+struct ComputeDispatchCommand {
+    GLuint meshIndex;
+};
+
 struct Batch {
     Batch();
     ~Batch();
 
     static const GLuint bufferCount = 3;
     static const GLuint bufferSize = 2048;
+
+    const Mesh* mesh;
 
     GLuint bufferIndex = 0;
 
@@ -42,7 +48,7 @@ struct Batch {
         };
     };
 
-    DrawElementsIndirectCommand* commands[bufferCount];
+    ComputeDispatchCommand* commands[bufferCount];
     GLuint *textureIndices[bufferCount];
     Transform *modelMatrices[bufferCount];
 

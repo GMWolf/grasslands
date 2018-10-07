@@ -32,6 +32,8 @@ Renderer::Renderer() {
 
 void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform &transform) {
 
+    batch.mesh = &mesh;
+
     //Check fence
     if (batch.fences[batch.bufferIndex]) {
         GLenum timeoutflag;
@@ -43,16 +45,16 @@ void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform 
     }
 
 
-
     size_t commandId = batch.commandCount++;
 
     //Set command
-    DrawElementsIndirectCommand& command = batch.commands[batch.bufferIndex][commandId];
+    batch.commands[batch.bufferIndex][commandId].meshIndex = mesh.index;
+    /*DrawElementsIndirectCommand& command = batch.commands[batch.bufferIndex][commandId];
     command.count = mesh.elementCount;
     command.instanceCount = 1;
     command.firstIndex = mesh.first;
     command.baseVertex = mesh.baseVertex;
-    command.baseInstance = static_cast<GLuint>(batch.bufferIndex * batch.bufferSize + batch.commandCount);
+    command.baseInstance = static_cast<GLuint>(batch.bufferIndex * batch.bufferSize + batch.commandCount);*/
 
 
     //Set texture info
@@ -98,8 +100,9 @@ void Renderer::renderbatch(Batch &batch) {
 
         dispatchCompute->use();
         dispatchCompute->setUniform(0, batch.bufferIndex * batch.bufferSize);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.computeCommandsBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.indirectBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.mesh->buffer->meshDataBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.computeCommandsBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.indirectBuffer);
         glDispatchCompute(batch.commandCount, 1, 1);
 
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -146,7 +149,7 @@ Batch::Batch(){
     GLbitfield flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT  | GL_MAP_COHERENT_BIT ;
     glNamedBufferStorage(computeCommandsBuffer, bufferCount * bufferSize * sizeof(DrawElementsIndirectCommand), nullptr, flags);
     flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT;
-    commands[0] = static_cast<DrawElementsIndirectCommand *>(glMapNamedBufferRange(computeCommandsBuffer, 0, bufferCount * bufferSize * sizeof(DrawElementsIndirectCommand), flags));
+    commands[0] = static_cast<ComputeDispatchCommand *>(glMapNamedBufferRange(computeCommandsBuffer, 0, bufferCount * bufferSize * sizeof(DrawElementsIndirectCommand), flags));
 
 
     //Indirect buffer

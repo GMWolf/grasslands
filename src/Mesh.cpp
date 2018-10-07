@@ -12,8 +12,8 @@ vertexData::vertexData(const glm::vec3 &p, const glm::vec3 &n, const glm::vec2 &
     texcoords[1] = t[1] * 0xFFFF;
 }
 
-Mesh::Mesh(MeshBuffer* buffer, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount) :
-        buffer(buffer), first(first), elementCount(elementCount), baseVertex(baseVertex), vertexCount(vertexCount) {
+Mesh::Mesh(MeshBuffer* buffer, GLuint index, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount) :
+        buffer(buffer), index(index), first(first), elementCount(elementCount), baseVertex(baseVertex), vertexCount(vertexCount) {
 }
 
 void Mesh::setVertexData(const std::vector<vertexData>& data) {
@@ -37,7 +37,7 @@ void Mesh::setElementData(const std::vector<GLushort> &elements) {
 
 MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
     //Create gl objects
-    glCreateBuffers(3, bufferObjects);
+    glCreateBuffers(4, bufferObjects);
     glCreateVertexArrays(1, &vertexArray);
 
     //Setup storage
@@ -82,9 +82,15 @@ MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
 
     //set element meshBuffer
     glVertexArrayElementBuffer(vertexArray, elementBuffer);
+
+
+    //setup mesh data
+    GLuint meshCount = 10;
+    glNamedBufferStorage(meshDataBuffer, meshCount * sizeof(MeshData), nullptr, GL_DYNAMIC_STORAGE_BIT);
 }
 
 Mesh MeshBuffer::getMesh(GLint elementCount, GLint vertexCount) {
+    GLuint index = nextMeshIndex++;
 
     GLint first = nextFirst;
     GLint baseVertex = nextBaseVertex;
@@ -92,14 +98,19 @@ Mesh MeshBuffer::getMesh(GLint elementCount, GLint vertexCount) {
     nextFirst += elementCount;
     nextBaseVertex += vertexCount;
 
+    MeshData md(first, elementCount, baseVertex, glm::vec3(0,0,0), glm::vec3(0,0,0));
 
-    return Mesh(this, first, elementCount, baseVertex, vertexCount);
+    glNamedBufferSubData(meshDataBuffer, index * sizeof(MeshData), sizeof(MeshData), &md);
+
+    return Mesh(this, index, first, elementCount, baseVertex, vertexCount);
 }
 
 Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertexData, const std::vector<GLushort> &elements) {
+
     Mesh m = getMesh(static_cast<GLint>(elements.size()), static_cast<GLint>(vertexData.size()));
     m.setVertexData(vertexData);
     m.setElementData(elements);
+
     return m;
 }
 
@@ -108,6 +119,6 @@ void MeshBuffer::bindVa() const {
 }
 
 MeshBuffer::~MeshBuffer() {
-    glDeleteBuffers(3, bufferObjects);
+    glDeleteBuffers(4, bufferObjects);
     glDeleteVertexArrays(1, &vertexArray);
 }

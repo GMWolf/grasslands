@@ -21,7 +21,6 @@ Mesh ObjLoader::load(MeshBuffer &buffer, const std::string &filename) {
         return buffer.getMesh(0,0);
     }
 
-
     std::vector<glm::vec3> positions;
     std::vector<glm::vec2> texcoords;
     std::vector<glm::vec3> normals;
