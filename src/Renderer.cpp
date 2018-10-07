@@ -90,15 +90,27 @@ void Renderer::renderbatch(Batch &batch) {
 
     if (batch.commandCount > 0) {
        // std::cout << "buffer index: " << batch.bufferIndex <<"\n";
-        shader->use();
-        shader->setUniform(shader->getUniformLocation("tex"), 0);
 
-        glFlushMappedNamedBufferRange(batch.indirectBuffer, batch.bufferIndex * batch.bufferSize * sizeof(DrawElementsIndirectCommand) , batch.commandCount * sizeof(DrawElementsIndirectCommand));
+
+        glFlushMappedNamedBufferRange(batch.computeCommandsBuffer, batch.bufferIndex * batch.bufferSize * sizeof(DrawElementsIndirectCommand) , batch.commandCount * sizeof(DrawElementsIndirectCommand));
         glFlushMappedNamedBufferRange(batch.textureIndexBuffer, batch.bufferIndex * batch.bufferSize * sizeof(GLuint), batch.commandCount * sizeof(GLuint));
         glFlushMappedNamedBufferRange(batch.modelMatrixBuffer, batch.bufferIndex * batch.bufferSize * sizeof(Transform), batch.commandCount * sizeof(Transform));
+
+        dispatchCompute->use();
+        dispatchCompute->setUniform(0, batch.bufferIndex * batch.bufferSize);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.computeCommandsBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.indirectBuffer);
+        glDispatchCompute(batch.commandCount, 1, 1);
+
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+        shader->use();
+        shader->setUniform(shader->getUniformLocation("tex"), 0);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.modelMatrixBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.textureIndexBuffer);
+
+
 
         glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_SHORT,
                                     reinterpret_cast<const void *>(batch.bufferIndex * batch.bufferSize * sizeof(DrawElementsIndirectCommand)),
@@ -109,23 +121,6 @@ void Renderer::renderbatch(Batch &batch) {
 
         batch.commandCount = 0;
         batch.bufferIndex = (batch.bufferIndex + 1) % batch.bufferCount;
-
-        //Wait on next batch to finish
-        /*int n = 0;
-        if (batch.fences[batch.bufferIndex]) {
-            GLenum timeoutflag;
-            do {
-                timeoutflag = glClientWaitSync(batch.fences[batch.bufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
-                if(timeoutflag != GL_ALREADY_SIGNALED) {
-                    //std::cout << "Waiting on fence " << batch.bufferIndex << " " << (++n) << "ms\n";
-                    n++;
-                }
-            } while (timeoutflag == GL_TIMEOUT_EXPIRED);
-
-        }
-        if (n > 0) {
-            //std::cout << "Waited on fence for " << (n) << " ms\n";
-        }*/
 
     }
 }
@@ -145,13 +140,19 @@ Batch::Batch(){
     commandCount = 0;
 
     //Create buffers
-    glCreateBuffers(3, bufferObjects);
+    glCreateBuffers(4, bufferObjects);
+
+    //Command buffer
+    GLbitfield flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT  | GL_MAP_COHERENT_BIT ;
+    glNamedBufferStorage(computeCommandsBuffer, bufferCount * bufferSize * sizeof(DrawElementsIndirectCommand), nullptr, flags);
+    flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT;
+    commands[0] = static_cast<DrawElementsIndirectCommand *>(glMapNamedBufferRange(computeCommandsBuffer, 0, bufferCount * bufferSize * sizeof(DrawElementsIndirectCommand), flags));
+
 
     //Indirect buffer
-    GLbitfield flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT  | GL_MAP_COHERENT_BIT ;
+    flags = 0;
     glNamedBufferStorage(indirectBuffer, bufferCount * bufferSize * sizeof(DrawElementsIndirectCommand), nullptr, flags);
-    flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT;
-    commands[0] = static_cast<DrawElementsIndirectCommand *>(glMapNamedBufferRange(indirectBuffer, 0, bufferCount * bufferSize * sizeof(DrawElementsIndirectCommand), flags));
+
 
     //texture index buffer
     flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT ;

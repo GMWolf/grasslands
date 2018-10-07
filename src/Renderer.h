@@ -33,8 +33,9 @@ struct Batch {
     GLuint commandCount = 0;
 
     union {
-        GLuint bufferObjects[3];
+        GLuint bufferObjects[4];
         struct {
+            GLuint computeCommandsBuffer;
             GLuint indirectBuffer;
             GLuint textureIndexBuffer;
             GLuint modelMatrixBuffer;
