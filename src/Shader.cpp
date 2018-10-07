@@ -7,31 +7,22 @@
 #include <glm.hpp>
 #include <gtc/type_ptr.hpp>
 
-Shader::Shader(const std::string &vertexSource, const std::string &fragmentSource) {
-    const char* c_vertexSource = vertexSource.c_str();
-    const char* c_fragmentSource = fragmentSource.c_str();
-
-    GLuint vertexShader, fragmentShader;
-
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &c_vertexSource, NULL);
-    glCompileShader(vertexShader);
-    testShader(vertexShader);
-
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &c_fragmentSource, NULL);
-    glCompileShader(fragmentShader);
-    testShader(fragmentShader);
+Shader::Shader(std::map<GLenum, std::string> sources) {
 
     program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
+
+    for(auto& e : sources) {
+        GLuint sh = glCreateShader(e.first);
+        const char* c_source = e.second.c_str();
+        glShaderSource(sh, 1, &c_source, NULL);
+        glCompileShader(sh);
+        testShader(sh);
+        glAttachShader(program, sh);
+        glDeleteShader(sh); //Flag for deletion
+    }
+
     glLinkProgram(program);
-
     testLink(program);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 }
 
 void Shader::testShader(GLuint shader) {

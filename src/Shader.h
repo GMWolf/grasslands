@@ -9,12 +9,12 @@
 #include <GLFW/glfw3.h>
 #include <string>
 #include <iostream>
-
+#include <map>
 
 class Shader {
 public:
 
-    Shader(const std::string &vertexSource, const std::string &fragmentSource);
+    Shader(std::map<GLenum, std::string> sources);
 
     ~Shader();
 

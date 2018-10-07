@@ -59,6 +59,8 @@ public:
 
     void submit(const RenderObject& robj);
 
+    void submit(const std::vector<RenderObject>& objs);
+
     void flushBatches();
 
     void setProjection(const glm::mat4& proj);
@@ -69,6 +71,8 @@ public:
     Batch batch;
 
     Shader* shader;
+
+    Shader* dispatchCompute;
 };
 
 

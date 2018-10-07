@@ -125,6 +125,24 @@ int main() {
     double lastTime = glfwGetTime();
     float time = 0;
 
+    std::vector<RenderObject> objects;
+    srand(10);
+
+    int halfSize = 10;
+    //submit a lot of suzanes
+    for(int i = -halfSize; i < halfSize; i++)
+        for(int j = -halfSize; j < halfSize; j++)
+            for(int k = -halfSize; k < halfSize; k++) {
+                Texture& t = rand() % 2 == 0 ? tex : tex2;
+                Mesh& m = meshes[rand() % 4];
+
+                Transform transform;
+                transform.pos = glm::vec3(i, j, k) * 3.0f;
+                transform.scale = 1;
+                transform.rot = glm::quat(glm::vec3(0, 0, 0));
+                objects.emplace_back(m, t, transform);
+            }
+
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
 
         double thisTime = glfwGetTime();
@@ -148,22 +166,12 @@ int main() {
         suzane.buffer->bindVa();
         tex.textureArray->bind(0);
 
-        srand(10);
+        //Rotate
+        for(RenderObject& o : objects) {
+            o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+        }
 
-        int halfSize = 10;
-        //submit a lot of suzanes
-        for(int i = -halfSize; i < halfSize; i++)
-            for(int j = -halfSize; j < halfSize; j++)
-                for(int k = -halfSize; k < halfSize; k++) {
-                    Texture& t = rand() % 2 == 0 ? tex : tex2;
-                    Mesh& m = meshes[rand() % 4];
-
-                    Transform transform;
-                    transform.pos = glm::vec3(i, j, k) * 3.0f;
-                    transform.scale = 1;
-                    transform.rot = glm::quat(glm::vec3(0, 5 * time / (11 + j),0));
-                    renderer.submit(m, t, transform);
-                }
+        renderer.submit(objects);
 
         renderer.flushBatches();
 

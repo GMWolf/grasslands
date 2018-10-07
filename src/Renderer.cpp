@@ -14,13 +14,35 @@ Renderer::Renderer() {
     std::ifstream fragFile("../defaultFragment.glsl");
     std::string fragText((std::istreambuf_iterator<char>(fragFile)), (std::istreambuf_iterator<char>()));
 
-    std::cout << "New Shader" << std::endl;
-    shader = new Shader(vertexText, fragText);
+    shader = new Shader({
+        {GL_VERTEX_SHADER, vertexText},
+        {GL_FRAGMENT_SHADER, fragText}
+    });
+
+
+    std::ifstream dispatchFile("../dispatchGeom.glsl");
+    std::string dispatchText((std::istreambuf_iterator<char>(dispatchFile)), (std::istreambuf_iterator<char>()));
+
+    dispatchCompute = new Shader({
+        {GL_COMPUTE_SHADER, dispatchText}
+    });
 
 }
 
 
 void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform &transform) {
+
+    //Check fence
+    if (batch.fences[batch.bufferIndex]) {
+        GLenum timeoutflag;
+        do {
+            timeoutflag = glClientWaitSync(batch.fences[batch.bufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+        } while (timeoutflag == GL_TIMEOUT_EXPIRED);
+
+        batch.fences[batch.bufferIndex] = nullptr;
+    }
+
+
 
     size_t commandId = batch.commandCount++;
 
@@ -54,7 +76,7 @@ void Renderer::flushBatches() {
     int n = 0;
     do {
         //std::cout << "Waiting for last fence " << ++n << std::endl;
-        timeoutflag = glClientWaitSync(batch.fences[index], GL_SYNC_FLUSH_COMMANDS_BIT, 1000);
+        timeoutflag = glClientWaitSync(batch.fences[index], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
     } while(timeoutflag == GL_TIMEOUT_EXPIRED);
 
 
@@ -89,23 +111,33 @@ void Renderer::renderbatch(Batch &batch) {
         batch.bufferIndex = (batch.bufferIndex + 1) % batch.bufferCount;
 
         //Wait on next batch to finish
-        int n = 0;
+        /*int n = 0;
         if (batch.fences[batch.bufferIndex]) {
             GLenum timeoutflag;
             do {
-                timeoutflag = glClientWaitSync(batch.fences[batch.bufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 1000);
+                timeoutflag = glClientWaitSync(batch.fences[batch.bufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
                 if(timeoutflag != GL_ALREADY_SIGNALED) {
                     //std::cout << "Waiting on fence " << batch.bufferIndex << " " << (++n) << "ms\n";
+                    n++;
                 }
             } while (timeoutflag == GL_TIMEOUT_EXPIRED);
 
         }
+        if (n > 0) {
+            //std::cout << "Waited on fence for " << (n) << " ms\n";
+        }*/
 
     }
 }
 
 void Renderer::submit(const RenderObject &robj) {
     submit(robj.mesh, robj.texture, robj.transform);
+}
+
+void Renderer::submit(const std::vector<RenderObject>& objs) {
+    for(const RenderObject& obj : objs) {
+        submit(obj);
+    }
 }
 
 Batch::Batch(){

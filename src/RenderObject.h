@@ -12,6 +12,8 @@
 
 struct RenderObject {
 
+    RenderObject(const Mesh& mesh, const Texture& texture, const Transform& transform);
+
     const Mesh& mesh;
     const Texture& texture;
 
