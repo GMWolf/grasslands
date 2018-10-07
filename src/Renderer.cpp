@@ -49,12 +49,6 @@ void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform 
 
     //Set command
     batch.commands[batch.bufferIndex][commandId].meshIndex = mesh.index;
-    /*DrawElementsIndirectCommand& command = batch.commands[batch.bufferIndex][commandId];
-    command.count = mesh.elementCount;
-    command.instanceCount = 1;
-    command.firstIndex = mesh.first;
-    command.baseVertex = mesh.baseVertex;
-    command.baseInstance = static_cast<GLuint>(batch.bufferIndex * batch.bufferSize + batch.commandCount);*/
 
 
     //Set texture info

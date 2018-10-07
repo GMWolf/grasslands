@@ -4,9 +4,11 @@
 layout(local_size_x = 1) in;
 
 struct Mesh {
-    uint first;
-    uint elementCount;
-    uint baseVertex;
+    vec3 bboxMin; float pad0;
+    vec3 bboxmax; float pad1;
+
+    uint first, elementCount, baseVertex;
+    float pad2;
 };
 
 struct DrawCommand {

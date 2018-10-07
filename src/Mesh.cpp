@@ -12,28 +12,10 @@ vertexData::vertexData(const glm::vec3 &p, const glm::vec3 &n, const glm::vec2 &
     texcoords[1] = t[1] * 0xFFFF;
 }
 
-Mesh::Mesh(MeshBuffer* buffer, GLuint index, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount) :
-        buffer(buffer), index(index), first(first), elementCount(elementCount), baseVertex(baseVertex), vertexCount(vertexCount) {
+Mesh::Mesh(MeshBuffer* buffer, GLuint index, glm::vec3 bboxMin, glm::vec3 bboxMax) :
+        buffer(buffer), index(index),bboxMin(bboxMin), bboxMax(bboxMax) {
 }
 
-void Mesh::setVertexData(const std::vector<vertexData>& data) {
-    glNamedBufferSubData(buffer->vertexBuffer, baseVertex * sizeof(vertexData), data.size() * sizeof(vertexData), data.data());
-
-    const float inf = std::numeric_limits<float>::infinity();
-    const float ninf = -inf;
-    bboxMax = glm::vec3(ninf, ninf, ninf);
-    bboxMin = glm::vec3(inf, inf, inf);
-    //Calculate bboxN
-    for(const vertexData& v : data) {
-        glm::vec3 pos = v.position;
-        bboxMax = glm::max(bboxMax, pos);
-        bboxMin = glm::min(bboxMin, pos);
-    }
-}
-
-void Mesh::setElementData(const std::vector<GLushort> &elements) {
-    glNamedBufferSubData(buffer->elementBuffer, first * sizeof(GLushort), elements.size() * sizeof(GLushort), elements.data());
-}
 
 MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
     //Create gl objects
@@ -89,29 +71,36 @@ MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
     glNamedBufferStorage(meshDataBuffer, meshCount * sizeof(MeshData), nullptr, GL_DYNAMIC_STORAGE_BIT);
 }
 
-Mesh MeshBuffer::getMesh(GLint elementCount, GLint vertexCount) {
+Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertices, const std::vector<GLushort> &elements) {
+
+
     GLuint index = nextMeshIndex++;
+    GLuint first = nextFirst;
+    GLuint baseVertex = nextBaseVertex;
 
-    GLint first = nextFirst;
-    GLint baseVertex = nextBaseVertex;
+    nextFirst += elements.size();
+    nextBaseVertex += vertices.size();
 
-    nextFirst += elementCount;
-    nextBaseVertex += vertexCount;
+    //Calculate bounding box
+    const float inf = std::numeric_limits<float>::infinity();
+    const float ninf = -inf;
+    glm::vec3 bboxMax = glm::vec3(ninf, ninf, ninf);
+    glm::vec3 bboxMin = glm::vec3(inf, inf, inf);
+    //Calculate bboxN
+    for(const vertexData& v : vertices) {
+        glm::vec3 pos = v.position;
+        bboxMax = glm::max(bboxMax, pos);
+        bboxMin = glm::min(bboxMin, pos);
+    }
 
-    MeshData md(first, elementCount, baseVertex, glm::vec3(0,0,0), glm::vec3(0,0,0));
-
+    //Write mesh data
+    MeshData md(first, elements.size(), baseVertex, bboxMin, bboxMax);
     glNamedBufferSubData(meshDataBuffer, index * sizeof(MeshData), sizeof(MeshData), &md);
+    //Write vertex and element data
+    glNamedBufferSubData(vertexBuffer, baseVertex * sizeof(vertexData), vertices.size() * sizeof(vertexData), vertices.data());
+    glNamedBufferSubData(elementBuffer, first * sizeof(GLushort), elements.size() * sizeof(GLushort), elements.data());
 
-    return Mesh(this, index, first, elementCount, baseVertex, vertexCount);
-}
-
-Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertexData, const std::vector<GLushort> &elements) {
-
-    Mesh m = getMesh(static_cast<GLint>(elements.size()), static_cast<GLint>(vertexData.size()));
-    m.setVertexData(vertexData);
-    m.setElementData(elements);
-
-    return m;
+    return Mesh(this, index, bboxMin, bboxMax);
 }
 
 void MeshBuffer::bindVa() const {

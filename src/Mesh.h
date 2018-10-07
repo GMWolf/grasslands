@@ -29,11 +29,9 @@ struct MeshData {
     first(first), elementCount(elementCount), baseVertex(baseVertex)/*, bboxMin(bboxMin), bboxMax(bboxMax)*/ {
     }
 
-    GLuint first;
-    GLuint elementCount;
-    GLuint baseVertex;
-    /*glm::vec3 bboxMin;
-    glm::vec3 bboxMax;*/
+    glm::vec3 bboxMin; float pad0; //4*4 bytes
+    glm::vec3 bboxMax; float pad1;//4*4 bytes
+    GLuint first, elementCount, baseVertex; float pad2;
 };
 
 class MeshBuffer;
@@ -43,20 +41,12 @@ public:
 
     GLuint index;
 
-    GLuint first;
-    GLuint elementCount;
-    GLuint baseVertex;
-    GLuint vertexCount;
-
     glm::vec3 bboxMin, bboxMax;
 
     MeshBuffer* const buffer;
 
-    void setVertexData(const std::vector<vertexData>& data);
-    void setElementData(const std::vector<GLushort>& elements);
-
 private:
-    Mesh(MeshBuffer* buffer, GLuint index, GLint first, GLint elementCount, GLint baseVertex, GLint vertexCount);
+    Mesh(MeshBuffer* buffer, GLuint index, glm::vec3 bboxMin, glm::vec3 bboxMax);
 };
 
 
@@ -68,15 +58,14 @@ public:
     MeshBuffer();
     ~MeshBuffer();
 
-    Mesh getMesh(GLint elementCount, GLint vertexCount);
-    Mesh getMesh(const std::vector<vertexData>& vertexData, const std::vector<GLushort>& elements);
+    Mesh getMesh(const std::vector<vertexData>& vertices, const std::vector<GLushort>& elements);
 
     void bindVa() const;
 
 private:
 
-    GLint nextFirst = 0;
-    GLint nextBaseVertex = 0;
+    GLuint nextFirst = 0;
+    GLuint nextBaseVertex = 0;
     GLuint nextMeshIndex = 0;
 
 

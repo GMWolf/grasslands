@@ -18,7 +18,7 @@ Mesh ObjLoader::load(MeshBuffer &buffer, const std::string &filename) {
 
     if (!file.is_open()) {
         std::cout << "Could not open file " << filename << std::endl;
-        return buffer.getMesh(0,0);
+        return buffer.getMesh(std::vector<vertexData>(),std::vector<GLushort >());
     }
 
     std::vector<glm::vec3> positions;

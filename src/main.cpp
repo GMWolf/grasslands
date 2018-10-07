@@ -94,11 +94,6 @@ int main() {
             suzane, knot, box, gear
     };
 
-    std::cout << suzane.vertexCount << std::endl;
-    std::cout << knot.vertexCount << std::endl;
-    std::cout << box.vertexCount << std::endl;
-    std::cout << gear.vertexCount << std::endl;
-
     Texture tex = loadDDS(group, "../texture.dds");
     Texture tex2 = loadDDS(group, "../diffuse_1.DDS");
 
