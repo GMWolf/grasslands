@@ -126,7 +126,7 @@ int main() {
     std::vector<RenderObject> objects;
     srand(10);
 
-    int halfSize = 15;
+    int halfSize = 20;
     //submit a lot of suzanes
     for(int i = -halfSize; i < halfSize; i++)
         for(int j = -halfSize; j < halfSize; j++)
@@ -156,7 +156,7 @@ int main() {
         float ratio = width / (float) height;
 
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 100.f);
+        projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 1000.f);
 
         camera.update(window, dt);
         renderer.setProjection(projection * camera.view);

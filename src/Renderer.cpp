@@ -52,10 +52,10 @@ void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform 
 
 
     //Set texture info
-    batch.textureIndices[batch.bufferIndex][batch.commandCount] = texture.layer;
+    batch.textureIndices[batch.bufferIndex][commandId] = texture.layer;
 
     //Set transform info
-    batch.transforms[batch.bufferIndex][batch.commandCount] = transform;
+    batch.transforms[batch.bufferIndex][commandId] = transform;
 
     if (batch.commandCount >= batch.bufferSize) {
         renderbatch(batch);
@@ -86,15 +86,13 @@ void Renderer::setProjection(const glm::mat4 &proj) {
 void Renderer::renderbatch(Batch &batch) {
 
     if (batch.commandCount > 0) {
-       // std::cout << "buffer index: " << batch.bufferIndex <<"\n";
-
 
         glFlushMappedNamedBufferRange(batch.computeCommandsBuffer, batch.bufferIndex * batch.bufferSize * sizeof(DrawElementsIndirectCommand) , batch.commandCount * sizeof(DrawElementsIndirectCommand));
         glFlushMappedNamedBufferRange(batch.textureIndexBuffer, batch.bufferIndex * batch.bufferSize * sizeof(GLuint), batch.commandCount * sizeof(GLuint));
         glFlushMappedNamedBufferRange(batch.transformBuffer, batch.bufferIndex * batch.bufferSize * sizeof(Transform), batch.commandCount * sizeof(Transform));
 
         dispatchCompute->use();
-        dispatchCompute->setUniform(0, batch.bufferIndex * batch.bufferSize);
+        dispatchCompute->setUniform(0, batch.bufferIndex * batch.bufferSize); //offset
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.mesh->buffer->meshDataBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.computeCommandsBuffer);
