@@ -81,6 +81,7 @@ void Renderer::flushBatches() {
 void Renderer::setProjection(const glm::mat4 &proj) {
         shader->setUniform(shader->getUniformLocation("MVP"), proj);
     dispatchCompute->setUniform(1, proj);
+    viewproj = proj;
 }
 
 void Renderer::renderbatch(Batch &batch) {

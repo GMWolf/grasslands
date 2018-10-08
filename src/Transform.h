@@ -13,6 +13,14 @@ struct Transform {
     glm::vec3 pos;
     float scale;
     glm::quat rot;
+
+    glm::vec3 apply(const glm::vec3& p);
 };
+
+inline glm::vec3 Transform::apply(const glm::vec3 &p) {
+
+    return (rot * p) * scale + pos;
+
+}
 
 #endif //GRASSLANDS_TRANSFORM_H

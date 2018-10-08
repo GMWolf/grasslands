@@ -11,6 +11,7 @@
 #include "Texture.h"
 #include "Transform.h"
 #include "Camera.h"
+#include "Octree.h"
 
 
 void error_callback(int error, const char *description) {
@@ -126,6 +127,10 @@ int main() {
     std::vector<RenderObject> objects;
     srand(10);
 
+
+    Octree octree;
+
+
     int halfSize = 20;
     //submit a lot of suzanes
     for(int i = -halfSize; i < halfSize; i++)
@@ -139,6 +144,7 @@ int main() {
                 transform.scale = 1;
                 transform.rot = glm::quat(glm::vec3(0, 0, 0));
                 objects.emplace_back(m, t, transform);
+                octree.root.insert(&objects.back());
             }
 
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
@@ -165,11 +171,11 @@ int main() {
         tex.textureArray->bind(0);
 
         //Rotate
-        for(RenderObject& o : objects) {
+        /*for(RenderObject& o : objects) {
             o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
-        }
+        }*/
 
-        renderer.submit(objects);
+        renderer.submit(octree.root);
 
         renderer.flushBatches();
 
