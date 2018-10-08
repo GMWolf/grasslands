@@ -100,7 +100,7 @@ void Renderer::renderbatch(Batch &batch) {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, batch.transformBuffer);
         glDispatchCompute(batch.commandCount, 1, 1);
 
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
         shader->use();
         shader->setUniform(shader->getUniformLocation("tex"), 0);
