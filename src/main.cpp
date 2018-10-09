@@ -186,8 +186,7 @@ int main() {
 
         renderer.flushBatches();
 
-        std::cout << renderer.numObject << std::endl;
-        renderer.numObject=0;
+        renderer.numObject = 0;
 
         glfwSwapBuffers(window);
         glfwPollEvents();
