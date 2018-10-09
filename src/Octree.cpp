@@ -3,6 +3,7 @@
 //
 
 #include "Octree.h"
+#include <iostream>
 
 OctreeNode::OctreeNode(glm::vec3 center, float halfSize, int maxItems) : center(center), halfSize(halfSize), maxItems(maxItems){
     min = center - glm::vec3(halfSize);
@@ -15,21 +16,21 @@ bool OctreeNode::contains(RenderObject *robj) {
     const glm::vec3& bboxMin = robj->mesh.bboxMin;
     const glm::vec3& bboxMax = robj->mesh.bboxMax;
     glm::vec3 corners[8];
-    corners[0] = robj->transform.apply(glm::vec3(min[0], max[1], min[2]));
-    corners[1] = robj->transform.apply(glm::vec3(min[0], max[1], max[2]));
-    corners[2] = robj->transform.apply(glm::vec3(max[0], max[1], max[2]));
-    corners[3] = robj->transform.apply(glm::vec3(max[0], max[1], min[2]));
-    corners[4] = robj->transform.apply(glm::vec3(max[0], min[1], min[2]));
-    corners[5] = robj->transform.apply(glm::vec3(max[0], min[1], max[2]));
-    corners[6] = robj->transform.apply(glm::vec3(min[0], min[1], max[2]));
-    corners[7] = robj->transform.apply(glm::vec3(min[0], min[1], min[2]));
+    corners[0] = robj->transform.apply(glm::vec3(bboxMin[0], bboxMax[1], bboxMin[2]));
+    corners[1] = robj->transform.apply(glm::vec3(bboxMin[0], bboxMax[1], bboxMax[2]));
+    corners[2] = robj->transform.apply(glm::vec3(bboxMax[0], bboxMax[1], bboxMax[2]));
+    corners[3] = robj->transform.apply(glm::vec3(bboxMax[0], bboxMax[1], bboxMin[2]));
+    corners[4] = robj->transform.apply(glm::vec3(bboxMax[0], bboxMin[1], bboxMin[2]));
+    corners[5] = robj->transform.apply(glm::vec3(bboxMax[0], bboxMin[1], bboxMax[2]));
+    corners[6] = robj->transform.apply(glm::vec3(bboxMin[0], bboxMin[1], bboxMax[2]));
+    corners[7] = robj->transform.apply(glm::vec3(bboxMin[0], bboxMin[1], bboxMin[2]));
 
     bool inside = false;
     for(int i = 0; i < 8; i++) {
         glm::bvec3 gt = glm::greaterThan(corners[i], min);
         glm::bvec3 lt = glm::lessThan(corners[i], max);
         bool cornerInside = glm::all(gt) && glm::all(lt);
-        inside |= cornerInside;
+        inside = inside || cornerInside;
     }
 
     return inside;
@@ -54,8 +55,9 @@ void OctreeNode::insert(RenderObject *renderObject) {
                     }
                 }
 
-                std::vector<RenderObject*> bin;
-                renderObjects.swap(bin);
+                //std::vector<RenderObject*> bin;
+                //renderObjects.swap(bin);
+                renderObjects.clear();
             }
 
         } else {

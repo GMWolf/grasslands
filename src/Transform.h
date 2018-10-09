@@ -19,6 +19,7 @@ struct Transform {
 
 inline glm::vec3 Transform::apply(const glm::vec3 &p) {
 
+    //return p + pos;
     return (rot * p) * scale + pos;
 
 }

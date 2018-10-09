@@ -35,6 +35,9 @@ struct OctreeNode {
 class Octree {
 
 public:
+    Octree(float halfSize) : root(glm::vec3(0,0,0), halfSize, 2048){
+    }
+
     OctreeNode root;
 };
 

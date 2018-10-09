@@ -44,21 +44,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 int main() {
 
 
-    if(!glfwInit()) {
+    if (!glfwInit()) {
         return -1;
     }
 
     glfwSetErrorCallback(error_callback);
 
-    GLFWwindow* window;
+    GLFWwindow *window;
 
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 
     //glfwGetPrimaryMonitor()
-    window = glfwCreateWindow(1280, 720, "Grasslands",  NULL, NULL);
-
+    window = glfwCreateWindow(1280, 720, "Grasslands", NULL, NULL);
 
 
     if (!window) {
@@ -79,8 +78,8 @@ int main() {
 
 
     // During init, enable debug output
-    glEnable              ( GL_DEBUG_OUTPUT );
-    glDebugMessageCallback( MessageCallback, 0 );
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(MessageCallback, 0);
 
 
     MeshBuffer meshBuffer;
@@ -91,24 +90,22 @@ int main() {
     Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
 
-    Mesh meshes[4] ={
+    Mesh meshes[4] = {
             suzane, knot, box, gear
     };
-
 
 
     Texture tex = loadDDS(group, "../texture.dds");
     Texture tex2 = loadDDS(group, "../diffuse_1.DDS");
 
 
-
     std::vector<vertexData> vertices = {
-            vertexData(glm::vec3(-1, -1, 0), glm::vec3(1,1,1), glm::vec2(0,1)), //0
-            vertexData(glm::vec3(-1, 1, 0), glm::vec3(1,1,1), glm::vec2(0,0)),  //1
-            vertexData(glm::vec3(1, -1, 0), glm::vec3(1,1,1), glm::vec2(1,1)),  //2
-            vertexData(glm::vec3(1, 1, 0), glm::vec3(1,1,1), glm::vec2(1,0))    //3
+            vertexData(glm::vec3(-1, -1, 0), glm::vec3(1, 1, 1), glm::vec2(0, 1)), //0
+            vertexData(glm::vec3(-1, 1, 0), glm::vec3(1, 1, 1), glm::vec2(0, 0)),  //1
+            vertexData(glm::vec3(1, -1, 0), glm::vec3(1, 1, 1), glm::vec2(1, 1)),  //2
+            vertexData(glm::vec3(1, 1, 0), glm::vec3(1, 1, 1), glm::vec2(1, 0))    //3
     };
-    std::vector<GLushort> vertexElements = {0,1,2,1,2,3};
+    std::vector<GLushort> vertexElements = {0, 1, 2, 1, 2, 3};
 
     Mesh rect = meshBuffer.getMesh(vertices, vertexElements);
     //suzane.setElementData(vertexElements);
@@ -128,24 +125,33 @@ int main() {
     srand(10);
 
 
-    Octree octree;
+    Octree octree(200 * 3);
+    std::cout << "built octree" << std::endl;
 
 
     int halfSize = 20;
     //submit a lot of suzanes
-    for(int i = -halfSize; i < halfSize; i++)
-        for(int j = -halfSize; j < halfSize; j++)
-            for(int k = -halfSize; k < halfSize; k++) {
-                Texture& t = rand() % 2 == 0 ? tex : tex2;
-                Mesh& m = meshes[rand() % 4];
+    for (int i = -halfSize; i < halfSize; i++) {
+        for (int j = -halfSize; j < halfSize; j++) {
+            for (int k = -halfSize; k < halfSize; k++) {
+                Texture &t = rand() % 2 == 0 ? tex : tex2;
+                Mesh &m = meshes[rand() % 4];
 
                 Transform transform;
                 transform.pos = glm::vec3(i, j, k) * 3.0f;
                 transform.scale = 1;
                 transform.rot = glm::quat(glm::vec3(0, 0, 0));
                 objects.emplace_back(m, t, transform);
-                octree.root.insert(&objects.back());
+                //octree.root.insert(&objects.back());
             }
+        }
+    }
+
+    for(auto& robj : objects) {
+        octree.root.insert(&robj);
+    }
+
+
 
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
 
@@ -171,13 +177,17 @@ int main() {
         tex.textureArray->bind(0);
 
         //Rotate
-        /*for(RenderObject& o : objects) {
+        for(RenderObject& o : objects) {
             o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
-        }*/
+        }
 
         renderer.submit(octree.root);
+        //renderer.submit(objects);
 
         renderer.flushBatches();
+
+        std::cout << renderer.numObject << std::endl;
+        renderer.numObject=0;
 
         glfwSwapBuffers(window);
         glfwPollEvents();

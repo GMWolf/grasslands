@@ -125,6 +125,7 @@ void Renderer::renderbatch(Batch &batch) {
 }
 
 void Renderer::submit(const RenderObject &robj) {
+    numObject++;
     submit(robj.mesh, robj.texture, robj.transform);
 }
 
@@ -132,6 +133,44 @@ void Renderer::submit(const std::vector<RenderObject>& objs) {
     for(const RenderObject& obj : objs) {
         submit(obj);
     }
+}
+
+void Renderer::submit(OctreeNode &octree) {
+
+    glm::vec4 corners[8];
+    for(int i = 0; i < 8; i++) {
+        float ox = i & 4 ? 1 : -1;
+        float oy = i & 2 ? 1 : -1;
+        float oz = i & 1 ? 1 : -1;
+        corners[i] = viewproj * glm::vec4(octree.center + glm::vec3(ox,oy,oz) * octree.halfSize, 1.0f);
+    }
+
+    glm::bvec3 allGt(true);
+    glm::bvec3 allLt(true);
+    for(int i = 0; i < 8; i++) {
+        glm::bvec3 gt = glm::greaterThan(glm::vec3(corners[i]), glm::vec3(corners[i].w));
+        glm::bvec3 lt = glm::lessThan(glm::vec3(corners[i]), -glm::vec3(corners[i].w));
+
+        allGt &= gt;
+        allLt &= lt;
+    }
+
+    bool inside = !(any(allGt) || any(allLt));
+
+    if(inside) {
+
+        if(octree.nodes) {
+            for(int i = 0; i < 8; i++) {
+                submit(octree.nodes[i]);
+            }
+        } else {
+            for(auto r : octree.renderObjects) {
+                submit(*r);
+            }
+        }
+
+    }
+
 }
 
 Batch::Batch(){
