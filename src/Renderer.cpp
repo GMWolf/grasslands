@@ -4,7 +4,7 @@
 #include <gtc/type_ptr.hpp>
 #include "Renderer.h"
 #include <fstream>
-
+#include "MaterialData.h"
 
 Renderer::Renderer() {
 
@@ -52,7 +52,7 @@ void Renderer::submit(const Mesh &mesh, const Texture &texture, const Transform 
 
 
     //Set texture info
-    batch.textureIndices[batch.bufferIndex][commandId] = texture.layer;
+    batch.materials[batch.bufferIndex][commandId] = MaterialData(texture.layer);
 
     //Set transform info
     batch.transforms[batch.bufferIndex][commandId] = transform;
@@ -79,7 +79,7 @@ void Renderer::flushBatches() {
 }
 
 void Renderer::setProjection(const glm::mat4 &proj) {
-        shader->setUniform(shader->getUniformLocation("MVP"), proj);
+    shader->setUniform(shader->getUniformLocation("MVP"), proj);
     dispatchCompute->setUniform(1, proj);
     viewproj = proj;
 }
@@ -88,8 +88,8 @@ void Renderer::renderbatch(Batch &batch) {
 
     if (batch.commandCount > 0) {
 
-        glFlushMappedNamedBufferRange(batch.computeCommandsBuffer, batch.bufferIndex * batch.bufferSize * sizeof(DrawElementsIndirectCommand) , batch.commandCount * sizeof(DrawElementsIndirectCommand));
-        glFlushMappedNamedBufferRange(batch.textureIndexBuffer, batch.bufferIndex * batch.bufferSize * sizeof(GLuint), batch.commandCount * sizeof(GLuint));
+        glFlushMappedNamedBufferRange(batch.computeCommandsBuffer, batch.bufferIndex * batch.bufferSize * sizeof(ComputeDispatchCommand) , batch.commandCount * sizeof(DrawElementsIndirectCommand));
+        glFlushMappedNamedBufferRange(batch.materialIndexBuffer, batch.bufferIndex * batch.bufferSize * sizeof(GLuint), batch.commandCount * sizeof(GLuint));
         glFlushMappedNamedBufferRange(batch.transformBuffer, batch.bufferIndex * batch.bufferSize * sizeof(Transform), batch.commandCount * sizeof(Transform));
 
         dispatchCompute->use();
@@ -107,7 +107,8 @@ void Renderer::renderbatch(Batch &batch) {
         shader->setUniform(shader->getUniformLocation("tex"), 0);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.textureIndexBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
+
 
 
 
@@ -194,9 +195,9 @@ Batch::Batch(){
 
     //texture index buffer
     flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT ;
-    glNamedBufferStorage(textureIndexBuffer, bufferCount * bufferSize * sizeof(GLint), nullptr, flags);
+    glNamedBufferStorage(materialIndexBuffer, bufferCount * bufferSize * sizeof(GLint), nullptr, flags);
     flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT;
-    textureIndices[0] = static_cast<GLuint *>(glMapNamedBufferRange(textureIndexBuffer, 0 , bufferCount * bufferSize * sizeof(GLuint), flags));
+    materials[0] = static_cast<MaterialData *>(glMapNamedBufferRange(materialIndexBuffer, 0 , bufferCount * bufferSize * sizeof(GLuint), flags));
 
     //Transform buffers
     flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT ;
@@ -208,7 +209,7 @@ Batch::Batch(){
     //Get offset mappings
     for(int i = 1; i < bufferCount; i++) {
         commands[i] = commands[0] + (bufferSize * i);
-        textureIndices[i] = textureIndices[0] + (bufferSize  * i);
+        materials[i] = materials[0] + (bufferSize  * i);
         transforms[i] = transforms[0] + (bufferSize  * i);
     }
 
@@ -221,7 +222,7 @@ Batch::Batch(){
 
 Batch::~Batch() {
     glUnmapNamedBuffer(indirectBuffer);
-    glUnmapNamedBuffer(textureIndexBuffer);
+    glUnmapNamedBuffer(materialIndexBuffer);
     glUnmapNamedBuffer(transformBuffer);
 
     glDeleteBuffers(3, bufferObjects);

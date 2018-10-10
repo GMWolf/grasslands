@@ -5,6 +5,7 @@ layout(location = 1) in vec3 position;
 layout(location = 2) in vec3 normal;
 layout(location = 3) in vec2 texcoord;
 
+
 struct Transform
  {
        vec3 pos;

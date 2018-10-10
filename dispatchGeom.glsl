@@ -110,6 +110,7 @@ bool OOBBInFrustrum(vec3 min, vec3 max, Transform transform, mat4 viewproj) {
     bbox[7] = toClipSpace * vec4(min[0], min[1], min[2], 1.f);
 
     //Check to that all points lay inside
+    //TODO deal when bbox is around frustum
     bool inside = false;
     for(int i = 0; i < 8; i++) {
         //Equivalent to / by w, then lessthan(1)

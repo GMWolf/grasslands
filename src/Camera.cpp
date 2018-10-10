@@ -16,9 +16,13 @@ default:break; \
 void Camera::update(GLFWwindow* window, float dt) {
 
     KEY_UPDATE(GLFW_KEY_LEFT, leftPressed);
+    KEY_UPDATE(GLFW_KEY_A, leftPressed);
     KEY_UPDATE(GLFW_KEY_RIGHT, rightPressed);
+    KEY_UPDATE(GLFW_KEY_D, rightPressed);
     KEY_UPDATE(GLFW_KEY_UP, upPressed);
+    KEY_UPDATE(GLFW_KEY_W, upPressed);
     KEY_UPDATE(GLFW_KEY_DOWN, downPressed);
+    KEY_UPDATE(GLFW_KEY_S, downPressed);
 
     glm::vec3 translate(0,0,0);
     translate += glm::vec3(look[0]) * ((rightPressed - leftPressed) * 5.0f * dt);

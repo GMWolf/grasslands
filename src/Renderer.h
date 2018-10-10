@@ -13,6 +13,7 @@
 #include "Transform.h"
 #include "RenderObject.h"
 #include "Octree.h"
+#include "MaterialData.h"
 
 struct DrawElementsIndirectCommand{
     GLuint count;
@@ -30,7 +31,7 @@ struct Batch {
     Batch();
     ~Batch();
 
-    static const GLuint bufferCount = 3;
+    static const GLuint bufferCount = 6;
     static const GLuint bufferSize = 2048;
 
     const Mesh* mesh;
@@ -44,13 +45,13 @@ struct Batch {
         struct {
             GLuint computeCommandsBuffer;
             GLuint indirectBuffer;
-            GLuint textureIndexBuffer;
+            GLuint materialIndexBuffer;
             GLuint transformBuffer;
         };
     };
 
     ComputeDispatchCommand* commands[bufferCount];
-    GLuint *textureIndices[bufferCount];
+    MaterialData *materials[bufferCount];
     Transform *transforms[bufferCount];
 
     GLsync fences[bufferCount];

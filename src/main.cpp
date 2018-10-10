@@ -12,6 +12,7 @@
 #include "Transform.h"
 #include "Camera.h"
 #include "Octree.h"
+#include "MaterialData.h"
 
 
 void error_callback(int error, const char *description) {
@@ -98,6 +99,9 @@ int main() {
     Texture tex = loadDDS(group, "../texture.dds");
     Texture tex2 = loadDDS(group, "../diffuse_1.DDS");
 
+    MaterialArray matArray;
+    GLuint mat1 = matArray.addMaterial(tex);
+    GLuint mat2 = matArray.addMaterial(tex2);
 
     std::vector<vertexData> vertices = {
             vertexData(glm::vec3(-1, -1, 0), glm::vec3(1, 1, 1), glm::vec2(0, 1)), //0
@@ -125,7 +129,7 @@ int main() {
     srand(10);
 
 
-    Octree octree(200 * 3);
+    Octree octree(40 * 3);
     std::cout << "built octree" << std::endl;
 
 
@@ -150,7 +154,6 @@ int main() {
     for(auto& robj : objects) {
         octree.root.insert(&robj);
     }
-
 
 
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
