@@ -8,14 +8,15 @@
 #include "Mesh.h"
 #include "Texture.h"
 #include "Transform.h"
+#include "Material.h"
 
 
 struct RenderObject {
 
-    RenderObject(const Mesh& mesh, const Texture& texture, const Transform& transform);
+    RenderObject(const Mesh& mesh, const Material& mat, const Transform& transform);
 
     const Mesh& mesh;
-    const Texture& texture;
+    const Material& mat;
 
     Transform transform;
 

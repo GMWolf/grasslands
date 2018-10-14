@@ -12,7 +12,7 @@
 #include "Transform.h"
 #include "Camera.h"
 #include "Octree.h"
-#include "MaterialData.h"
+#include "Material.h"
 
 
 void error_callback(int error, const char *description) {
@@ -96,12 +96,12 @@ int main() {
     };
 
 
-    Texture tex = loadDDS(group, "../texture.dds");
-    Texture tex2 = loadDDS(group, "../diffuse_1.DDS");
+    Texture RockDiffuse = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_albedo.DDS");
+    Texture RockNormal = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_normal.DDS");
+    Texture RockRough = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_roughness.DDS");
 
     MaterialArray matArray;
-    GLuint mat1 = matArray.addMaterial(tex);
-    GLuint mat2 = matArray.addMaterial(tex2);
+    Material mat1 = matArray.addMaterial(RockDiffuse, RockNormal, RockRough);
 
     std::vector<vertexData> vertices = {
             vertexData(glm::vec3(-1, -1, 0), glm::vec3(1, 1, 1), glm::vec2(0, 1)), //0
@@ -129,23 +129,23 @@ int main() {
     srand(10);
 
 
-    Octree octree(40 * 3);
+    Octree octree(10 * 3);
     std::cout << "built octree" << std::endl;
 
 
-    int halfSize = 20;
+    int halfSize = 10;
     //submit a lot of suzanes
     for (int i = -halfSize; i < halfSize; i++) {
         for (int j = -halfSize; j < halfSize; j++) {
             for (int k = -halfSize; k < halfSize; k++) {
-                Texture &t = rand() % 2 == 0 ? tex : tex2;
+                Material &mat = mat1;//rand() % 2 == 0 ? mat1 : mat2;
                 Mesh &m = meshes[rand() % 4];
 
                 Transform transform;
                 transform.pos = glm::vec3(i, j, k) * 3.0f;
                 transform.scale = 1;
                 transform.rot = glm::quat(glm::vec3(0, 0, 0));
-                objects.emplace_back(m, t, transform);
+                objects.emplace_back(m, mat, transform);
                 //octree.root.insert(&objects.back());
             }
         }
@@ -175,9 +175,10 @@ int main() {
 
         camera.update(window, dt);
         renderer.setProjection(projection * camera.view);
+        renderer.setEyePos(camera.pos);
 
         suzane.buffer->bindVa();
-        tex.textureArray->bind(0);
+        RockDiffuse.textureArray->bind(0);
 
         //Rotate
         for(RenderObject& o : objects) {

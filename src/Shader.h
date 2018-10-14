@@ -35,11 +35,17 @@ public:
     template<class T>
     void setUniform(GLint location,const T& value);
 
-private:
-    static void testShader(GLuint shader);
+    operator bool() {
+        return compiled;
+    }
 
-    static void testLink(GLuint program);
+private:
+    static bool testShader(GLuint shader);
+
+    static bool testLink(GLuint program);
     GLuint program;
+
+    bool compiled;
 
 };
 

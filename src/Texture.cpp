@@ -2,6 +2,7 @@
 // Created by felix on 30/09/2018.
 //
 
+#include <iostream>
 #include "Texture.h"
 
 
@@ -45,6 +46,7 @@ void TextureArray::bind(GLint unit) {
 TextureArray &TextureGroup::getArray(GLsizei width, GLsizei height, GLsizei miplevels, GLenum format) {
     auto dim = std::make_tuple(width, height, miplevels, format);
     if(textureArrays.find(dim) == textureArrays.end()) {
+        std::cout << "New Texture Array!" << std::endl;
         textureArrays.emplace(dim, std::make_unique<TextureArray>(miplevels, format, width, height, 32));
     }
 

@@ -18,12 +18,14 @@ layout(std430, binding = 0) buffer transformBuffer
     Transform ModelTransform[];
 };
 
-uniform mat4 MVP;
+uniform mat4 MV;
+uniform vec3 eyePos;
 
 out Vertex {
     vec3 normal;
     flat uint drawID;
     vec2 texcoord;
+    vec3 viewVector;
 } OUT;
 
 vec3 rotate(vec3 vec, vec4 quat) {
@@ -36,8 +38,10 @@ void main()
 {
     Transform t = ModelTransform[drawID];
 
-    gl_Position = MVP * vec4((rotate(position, t.rot) * t.scale) + t.pos, 1.0);
+    vec3 pos = (rotate(position, t.rot) * t.scale) + t.pos;
+    gl_Position = MV * vec4(pos, 1.0);
     OUT.drawID = drawID;
     OUT.normal = rotate(normal, t.rot);
     OUT.texcoord = texcoord;
+    OUT.viewVector = eyePos - pos;
 }

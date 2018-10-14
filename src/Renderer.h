@@ -13,7 +13,8 @@
 #include "Transform.h"
 #include "RenderObject.h"
 #include "Octree.h"
-#include "MaterialData.h"
+#include "Material.h"
+#include "Camera.h"
 
 struct DrawElementsIndirectCommand{
     GLuint count;
@@ -34,7 +35,8 @@ struct Batch {
     static const GLuint bufferCount = 6;
     static const GLuint bufferSize = 2048;
 
-    const Mesh* mesh;
+    const MeshBuffer* meshBuffer;
+    const MaterialArray* materialArray;
 
     GLuint bufferIndex = 0;
 
@@ -51,7 +53,7 @@ struct Batch {
     };
 
     ComputeDispatchCommand* commands[bufferCount];
-    MaterialData *materials[bufferCount];
+    GLuint *materialIndices[bufferCount];
     Transform *transforms[bufferCount];
 
     GLsync fences[bufferCount];
@@ -64,7 +66,7 @@ public:
 
     Renderer();
 
-    void submit(const Mesh &mesh, const Texture &texture, const Transform &transform);
+    void submit(const Mesh &mesh, const Material& material, const Transform &transform);
 
     void submit(const RenderObject& robj);
 
@@ -75,6 +77,7 @@ public:
     void flushBatches();
 
     void setProjection(const glm::mat4& proj);
+    void setEyePos(const glm::vec3& pos);
 
 //private:
     void renderbatch(Batch& batch);

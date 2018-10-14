@@ -22,10 +22,10 @@ Shader::Shader(std::map<GLenum, std::string> sources) {
     }
 
     glLinkProgram(program);
-    testLink(program);
+    compiled = testLink(program);
 }
 
-void Shader::testShader(GLuint shader) {
+bool Shader::testShader(GLuint shader) {
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status != GL_TRUE) {
@@ -33,11 +33,13 @@ void Shader::testShader(GLuint shader) {
         char error[2048];
         glGetShaderInfoLog(shader, sizeof(error), nullptr, error);
         std::cout << error << std::endl;
+        return false;
     }
+    return true;
 }
 
 
-void Shader::testLink(GLuint program) {
+bool Shader::testLink(GLuint program) {
     GLint status;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
     if (status != GL_TRUE) {
@@ -45,7 +47,9 @@ void Shader::testLink(GLuint program) {
         char error[2048];
         glGetProgramInfoLog(program, sizeof(error), nullptr, error);
         std::cout << error << std::endl;
+        return false;
     }
+    return true;
 }
 
 void Shader::use() {
