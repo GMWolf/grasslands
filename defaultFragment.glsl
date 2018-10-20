@@ -100,8 +100,10 @@ void main()
     vec3 albedo = texture(tex, vec3(IN.texcoord, mat.diffuse)).xyz;
 
     vec3 N = normalize(IN.normal);
-    vec3 normalMap = normalize(texture(tex, vec3(IN.texcoord, mat.normal)).xyz);
-    N = perturb_normal(N, IN.viewVector, IN.texcoord, normalMap * 2.0 - 1.0);
+    vec3 normalMap = normalize(texture(tex, vec3(IN.texcoord, mat.normal)).xyz * 2.0 - 1.0);
+    normalMap *= vec3(1,-1,1);
+
+    N = perturb_normal(N, IN.viewVector, IN.texcoord, normalMap);
 
     vec3 V = normalize(IN.viewVector);
 

@@ -90,6 +90,7 @@ int main() {
     Mesh knot = ObjLoader::load(meshBuffer, "../knot.obj");
     Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
+    Mesh grass = ObjLoader::load(meshBuffer, "../grass.obj");
 
     Mesh meshes[4] = {
             suzane, knot, box, gear
@@ -100,8 +101,22 @@ int main() {
     Texture RockNormal = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_normal.DDS");
     Texture RockRough = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_roughness.DDS");
 
+    Texture BrickDiffuse = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_albedo.DDS");
+    Texture BrickNormal = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_normal.DDS");
+    Texture BrickRough = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_roughness.DDS");
+
+    Texture TilesDiffuse = loadDDS(group, "../textures/BrokenTIles/Tiles_Broken_albedo.DDS");
+    Texture TilesNormal = loadDDS(group, "../textures/BrokenTIles/Tiles_Broken_normal.DDS");
+    Texture TilesRough = loadDDS(group, "../textures/BrokenTIles/Tiles_Broken_roughness.DDS");
+
     MaterialArray matArray;
     Material mat1 = matArray.addMaterial(RockDiffuse, RockNormal, RockRough);
+    Material mat2 = matArray.addMaterial(BrickDiffuse, BrickNormal, BrickRough);
+    Material mat3 = matArray.addMaterial(TilesDiffuse, TilesNormal, TilesRough);
+
+    Material materials[] {
+        mat1,mat2,mat3
+    };
 
     std::vector<vertexData> vertices = {
             vertexData(glm::vec3(-1, -1, 0), glm::vec3(1, 1, 1), glm::vec2(0, 1)), //0
@@ -138,7 +153,7 @@ int main() {
     for (int i = -halfSize; i < halfSize; i++) {
         for (int j = -halfSize; j < halfSize; j++) {
             for (int k = -halfSize; k < halfSize; k++) {
-                Material &mat = mat1;//rand() % 2 == 0 ? mat1 : mat2;
+                Material &mat = materials[rand() % 3];
                 Mesh &m = meshes[rand() % 4];
 
                 Transform transform;
