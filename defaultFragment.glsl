@@ -4,7 +4,7 @@
 struct material {
     uint diffuse;
     uint normal;
-    uint roughness;
+    uint ram;
 };
 
 
@@ -96,7 +96,10 @@ void main()
 {
 
     material mat = materials[materialIndex[IN.drawID]];
-    float roughness = texture(tex, vec3(IN.texcoord, mat.roughness)).x;
+    vec3 RAM = texture(tex, vec3(IN.texcoord, mat.ram)).xyz;
+    float roughness = RAM.x;
+    float AO = RAM.y;
+    float metalic = RAM.z;
     vec3 albedo = texture(tex, vec3(IN.texcoord, mat.diffuse)).xyz;
 
     vec3 N = normalize(IN.normal);
@@ -112,7 +115,7 @@ void main()
     vec3 H = normalize(L + V);
 
     vec3 F0 = vec3(0.04);
-    //F0 = mix(F0, albedo, metallic);
+    F0 = mix(F0, albedo, metalic);
     vec3 F = fresnel(max(dot(H, V), 0.0), F0);
 
     float NDF = D_GGX(N, H, roughness);
@@ -132,7 +135,7 @@ void main()
     vec3 radiance = vec3(4.0, 4.0, 4.0);
     vec3 light = (kD * albedo / PI + specular)  * radiance  * NdotL;
 
-    vec3 ambient = vec3(0.03) * albedo; // * ao
+    vec3 ambient = vec3(0.03) * albedo * texture(tex, vec3(IN.texcoord, AO)).x;
 
     outColor = vec4(light + ambient, 1.0);
 }

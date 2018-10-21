@@ -177,6 +177,42 @@ void Renderer::submit(OctreeNode &octree) {
 
 }
 
+void Renderer::submit(BVH &bvh) {
+
+    glm::vec4 corners[8];
+    corners[0] = viewproj * glm::vec4(bvh.min[0], bvh.max[1], bvh.min[2], 1.f);
+    corners[1] = viewproj * glm::vec4(bvh.min[0], bvh.max[1], bvh.max[2], 1.f);
+    corners[2] = viewproj * glm::vec4(bvh.max[0], bvh.max[1], bvh.max[2], 1.f);
+    corners[3] = viewproj * glm::vec4(bvh.max[0], bvh.max[1], bvh.min[2], 1.f);
+    corners[4] = viewproj * glm::vec4(bvh.max[0], bvh.min[1], bvh.min[2], 1.f);
+    corners[5] = viewproj * glm::vec4(bvh.max[0], bvh.min[1], bvh.max[2], 1.f);
+    corners[6] = viewproj * glm::vec4(bvh.min[0], bvh.min[1], bvh.max[2], 1.f);
+    corners[7] = viewproj * glm::vec4(bvh.min[0], bvh.min[1], bvh.min[2], 1.f);
+
+
+    glm::bvec3 allGt(true);
+    glm::bvec3 allLt(true);
+    for(int i = 0; i < 8; i++) {
+        glm::bvec3 gt = glm::greaterThan(glm::vec3(corners[i]), glm::vec3(corners[i].w));
+        glm::bvec3 lt = glm::lessThan(glm::vec3(corners[i]), -glm::vec3(corners[i].w));
+
+        allGt &= gt;
+        allLt &= lt;
+    }
+
+    bool inside = !(any(allGt) || any(allLt));
+
+    if (inside) {
+        if(bvh.children) {
+            submit(bvh.children[0]);
+            submit(bvh.children[1]);
+        } else {
+            for(auto r : bvh.objects) {
+                submit(*r);
+            }
+        }
+    }
+}
 
 
 Batch::Batch(){

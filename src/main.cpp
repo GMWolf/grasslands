@@ -75,11 +75,11 @@ int main() {
 
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
-    glfwSwapInterval(0);
+    //glfwSwapInterval(0);
 
 
     // During init, enable debug output
-    glEnable(GL_DEBUG_OUTPUT);
+    //glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
 
 
@@ -99,23 +99,28 @@ int main() {
 
     Texture RockDiffuse = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_albedo.DDS");
     Texture RockNormal = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_normal.DDS");
-    Texture RockRough = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_roughness.DDS");
+    Texture RockRAM = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_roughAOMetalic.DDS");
 
     Texture BrickDiffuse = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_albedo.DDS");
     Texture BrickNormal = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_normal.DDS");
-    Texture BrickRough = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_roughness.DDS");
+    Texture BrickRAM = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_roughAOMetalic.DDS");
 
-    Texture TilesDiffuse = loadDDS(group, "../textures/BrokenTIles/Tiles_Broken_albedo.DDS");
-    Texture TilesNormal = loadDDS(group, "../textures/BrokenTIles/Tiles_Broken_normal.DDS");
-    Texture TilesRough = loadDDS(group, "../textures/BrokenTIles/Tiles_Broken_roughness.DDS");
+    Texture TilesDiffuse = loadDDS(group, "../textures/BrokenTiles/Tiles_Broken_albedo.DDS");
+    Texture TilesNormal = loadDDS(group, "../textures/BrokenTiles/Tiles_Broken_normal.DDS");
+    Texture TilesRAM = loadDDS(group, "../textures/BrokenTiles/Tiles_Broken_roughAOMetalic.DDS");
+
+    Texture MetalDiffuse = loadDDS(group, "../textures/MetalThreadplate/Metal_ThreadplateBare_albedo.DDS");
+    Texture MetalNormal = loadDDS(group,  "../textures/MetalThreadplate/Metal_ThreadplateBare_normal.DDS");
+    Texture MetalRAM = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_roughAOMetalic.DDS");
 
     MaterialArray matArray;
-    Material mat1 = matArray.addMaterial(RockDiffuse, RockNormal, RockRough);
-    Material mat2 = matArray.addMaterial(BrickDiffuse, BrickNormal, BrickRough);
-    Material mat3 = matArray.addMaterial(TilesDiffuse, TilesNormal, TilesRough);
+    Material mat1 = matArray.addMaterial(RockDiffuse, RockNormal, RockRAM);
+    Material mat2 = matArray.addMaterial(BrickDiffuse, BrickNormal, BrickRAM);
+    Material mat3 = matArray.addMaterial(TilesDiffuse, TilesNormal, TilesRAM);
+    Material mat4 = matArray.addMaterial(MetalDiffuse, MetalNormal, MetalRAM);
 
     Material materials[] {
-        mat1,mat2,mat3
+        mat1,mat2,mat3,mat4
     };
 
     std::vector<vertexData> vertices = {
@@ -144,16 +149,16 @@ int main() {
     srand(10);
 
 
-    Octree octree(10 * 3);
-    std::cout << "built octree" << std::endl;
-
+    /*Octree octree(50 * 3);
+    std::cout << "built octree" << std::endl;*/
+    BVH bvh(128);
 
     int halfSize = 10;
     //submit a lot of suzanes
     for (int i = -halfSize; i < halfSize; i++) {
         for (int j = -halfSize; j < halfSize; j++) {
             for (int k = -halfSize; k < halfSize; k++) {
-                Material &mat = materials[rand() % 3];
+                Material &mat = materials[rand() % 4];
                 Mesh &m = meshes[rand() % 4];
 
                 Transform transform;
@@ -167,7 +172,8 @@ int main() {
     }
 
     for(auto& robj : objects) {
-        octree.root.insert(&robj);
+        //octree.root.insert(&robj);
+        bvh.insert(&robj);
     }
 
 
@@ -200,7 +206,10 @@ int main() {
             o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
-        renderer.submit(octree.root);
+        renderer.numObject = 0;
+        renderer.submit(bvh);
+        //std::cout << renderer.numObject << std::endl;
+        //renderer.submit(octree.root);
         //renderer.submit(objects);
 
         renderer.flushBatches();

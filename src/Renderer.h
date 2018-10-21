@@ -15,6 +15,7 @@
 #include "Octree.h"
 #include "Material.h"
 #include "Camera.h"
+#include "BVH.h"
 
 struct DrawElementsIndirectCommand{
     GLuint count;
@@ -71,6 +72,8 @@ public:
     void submit(const RenderObject& robj);
 
     void submit(const std::vector<RenderObject>& objs);
+
+    void submit(BVH& bvh);
 
     void submit(OctreeNode& octree);
 
