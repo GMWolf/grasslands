@@ -1,5 +1,7 @@
 #version 430 core
 
+
+
 layout(vertices = 3) out;
 
 
@@ -29,12 +31,10 @@ void main() {
 
     float depth = length(IN[gl_InvocationID].viewVector);
 
-
-    gl_TessLevelInner[0] = 5;
-
-	gl_TessLevelOuter[0] = 5;
-	gl_TessLevelOuter[1] = 5;
-	gl_TessLevelOuter[2] = 5;
+    gl_TessLevelInner[0] = 100;
+	gl_TessLevelOuter[0] = 100;
+	gl_TessLevelOuter[1] = 100;
+	gl_TessLevelOuter[2] = 100;
 
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 

@@ -9,13 +9,14 @@
 
 struct MaterialData {
 
-    MaterialData(GLuint diffuse, GLuint normal, GLuint ram)
-    : diffuseLayer(diffuse), normalLayer(normal), RAMLayer(ram){
+    MaterialData(GLuint diffuse, GLuint normal, GLuint ram, GLuint disp)
+    : diffuseLayer(diffuse), normalLayer(normal), RAMLayer(ram), dispLayer(disp){
     }
 
     GLuint diffuseLayer;
     GLuint normalLayer;
     GLuint RAMLayer;
+    GLuint dispLayer;
 };
 
 class MaterialArray;
@@ -34,8 +35,8 @@ public:
         glNamedBufferStorage(buffer, materialCount * sizeof(MaterialData), nullptr, GL_DYNAMIC_STORAGE_BIT);
     }
 
-    Material addMaterial(const Texture& diffuse, const Texture& normal, const Texture& ram) {
-        MaterialData md(diffuse.layer, normal.layer, ram.layer);
+    Material addMaterial(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp) {
+        MaterialData md(diffuse.layer, normal.layer, ram.layer, disp.layer);
         GLuint id = nextID++;
         glNamedBufferSubData(buffer, id * sizeof(MaterialData), sizeof(MaterialData), &md);
 

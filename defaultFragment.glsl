@@ -5,6 +5,7 @@ struct material {
     uint diffuse;
     uint normal;
     uint ram;
+    uint disp;
 };
 
 

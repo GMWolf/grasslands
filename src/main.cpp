@@ -100,24 +100,28 @@ int main() {
     Texture RockDiffuse = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_albedo.DDS");
     Texture RockNormal = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_normal.DDS");
     Texture RockRAM = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_roughAOMetalic.DDS");
+    Texture RockHeight = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_height.DDS");
 
     Texture BrickDiffuse = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_albedo.DDS");
     Texture BrickNormal = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_normal.DDS");
     Texture BrickRAM = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_roughAOMetalic.DDS");
+    Texture BrickHeight = loadDDS(group, "../textures/MedievalBrick/Brick_Medieval_height.DDS");
 
     Texture TilesDiffuse = loadDDS(group, "../textures/BrokenTiles/Tiles_Broken_albedo.DDS");
     Texture TilesNormal = loadDDS(group, "../textures/BrokenTiles/Tiles_Broken_normal.DDS");
     Texture TilesRAM = loadDDS(group, "../textures/BrokenTiles/Tiles_Broken_roughAOMetalic.DDS");
+    Texture TilesHeight = loadDDS(group, "../textures/BrokenTiles/Tiles_Broken_height.DDS");
 
     Texture MetalDiffuse = loadDDS(group, "../textures/MetalThreadplate/Metal_ThreadplateBare_albedo.DDS");
     Texture MetalNormal = loadDDS(group,  "../textures/MetalThreadplate/Metal_ThreadplateBare_normal.DDS");
     Texture MetalRAM = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_roughAOMetalic.DDS");
+    Texture MetalHeight = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_height.DDS");
 
     MaterialArray matArray;
-    Material mat1 = matArray.addMaterial(RockDiffuse, RockNormal, RockRAM);
-    Material mat2 = matArray.addMaterial(BrickDiffuse, BrickNormal, BrickRAM);
-    Material mat3 = matArray.addMaterial(TilesDiffuse, TilesNormal, TilesRAM);
-    Material mat4 = matArray.addMaterial(MetalDiffuse, MetalNormal, MetalRAM);
+    Material mat1 = matArray.addMaterial(RockDiffuse, RockNormal, RockRAM, RockHeight);
+    Material mat2 = matArray.addMaterial(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight);
+    Material mat3 = matArray.addMaterial(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight);
+    Material mat4 = matArray.addMaterial(MetalDiffuse, MetalNormal, MetalRAM, MetalHeight);
 
     Material materials[] {
         mat1,mat2,mat3,mat4
@@ -154,7 +158,7 @@ int main() {
     std::cout << "built octree" << std::endl;*/
     BVH bvh(128);
 
-    int halfSize = 10;
+    int halfSize = 3;
     //submit a lot of suzanes
     for (int i = -halfSize; i < halfSize; i++) {
         for (int j = -halfSize; j < halfSize; j++) {
@@ -204,7 +208,7 @@ int main() {
 
         //Rotate
         for(RenderObject& o : objects) {
-            o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+            //o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
         renderer.numObject = 0;

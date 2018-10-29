@@ -1,6 +1,8 @@
 #version 430
 
-layout(triangles, equal_spacing, ccw) in;
+#define E 2.71827
+
+layout(triangles, fractional_even_spacing, ccw) in;
 
 in VertexIn {
        vec3 normal;
@@ -16,6 +18,22 @@ out Vertex {
         vec3 viewVector;
 } OUT;
 
+struct material {
+    uint diffuse;
+    uint normal;
+    uint ram;
+    uint disp;
+};
+
+layout(std430, binding = 1) buffer MaterialIndexBuffer {
+    uint materialIndex[];
+};
+
+layout(std430, binding = 2) buffer MaterialDataBuffer {
+    material materials[];
+};
+
+uniform sampler2DArray tex;
 
 uniform mat4 MV;
 
@@ -43,7 +61,15 @@ void main() {
     vec3 vv2 = gl_TessCoord.z * IN[2].viewVector;
     vec3 viewVector = vv0 + vv1 + vv2;
 
-    //TODO : move vertices
+    float pinchEdge = gl_TessCoord.x * gl_TessCoord.y * gl_TessCoord.z;
+    pinchEdge = smoothstep(0, 1, pinchEdge * 500);
+
+    material mat = materials[materialIndex[IN[0].drawID]];
+    float d = textureLod(tex, vec3(texcoord, mat.disp),1).x;
+    d = (d * 2.0) - 1;
+    d *= 0.02 * pinchEdge;
+
+    pos += normal * d;
 
     gl_Position = MV * vec4(pos, 1.0);
 
