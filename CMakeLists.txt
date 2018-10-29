@@ -3,7 +3,7 @@ project(grasslands)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#set(CMAKE_EXE_LINKER_FLAGS "-static -lpthread -static-libgcc -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "-static -lpthread -static-libgcc -static-libstdc++")
 
 #setup gldfw
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)

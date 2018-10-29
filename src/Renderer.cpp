@@ -9,14 +9,26 @@
 
 Renderer::Renderer() {
 
-    std::ifstream vertFile("../defaultVertex.glsl");
+
+    std::ifstream vertFile("../BasicVertex.glsl");
     std::string vertexText((std::istreambuf_iterator<char>(vertFile)), (std::istreambuf_iterator<char>()));
+
+    //std::ifstream vertFile("../defaultVertex.glsl");
+    //std::string vertexText((std::istreambuf_iterator<char>(vertFile)), (std::istreambuf_iterator<char>()));
 
     std::ifstream fragFile("../defaultFragment.glsl");
     std::string fragText((std::istreambuf_iterator<char>(fragFile)), (std::istreambuf_iterator<char>()));
 
+    std::ifstream contFile("../defaultTessellateControl.glsl");
+    std::string contText((std::istreambuf_iterator<char>(contFile)), (std::istreambuf_iterator<char>()));
+
+    std::ifstream evalFile("../defaultTessellateEvaluation.glsl");
+    std::string evalText((std::istreambuf_iterator<char>(evalFile)), (std::istreambuf_iterator<char>()));
+
     shader = new Shader({
         {GL_VERTEX_SHADER, vertexText},
+        {GL_TESS_CONTROL_SHADER, contText},
+        {GL_TESS_EVALUATION_SHADER, evalText},
         {GL_FRAGMENT_SHADER, fragText}
     });
 
@@ -115,7 +127,7 @@ void Renderer::renderbatch(Batch &batch) {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.materialArray->buffer);
 
 
-        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_SHORT,
+        glMultiDrawElementsIndirect(GL_PATCHES, GL_UNSIGNED_SHORT,
                                     reinterpret_cast<const void *>(batch.bufferIndex * batch.bufferSize * sizeof(DrawElementsIndirectCommand)),
                                     batch.commandCount, 0);
 

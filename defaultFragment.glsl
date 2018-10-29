@@ -128,7 +128,7 @@ void main()
 
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    //kD *= 1.0 - metalic;
+    kD *= 1.0 - metalic;
 
     float NdotL = max(dot(N, L), 0.0);
 
@@ -138,4 +138,7 @@ void main()
     vec3 ambient = vec3(0.03) * albedo * texture(tex, vec3(IN.texcoord, AO)).x;
 
     outColor = vec4(light + ambient, 1.0);
+
+
+    //outColor = vec4(albedo, 1.0);
 }

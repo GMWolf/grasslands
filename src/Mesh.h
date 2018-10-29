@@ -15,7 +15,6 @@
 struct vertexData {
     vertexData(const glm::vec3& p, const glm::vec3& n, const glm::vec2& t);
 
-
     Vec3Half position;
     GLhalf pad; //16 * 4 -> 64 //padding for efficiency
     Vec3Int normal; //32
