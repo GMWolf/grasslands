@@ -4,7 +4,7 @@
 
 #include "RenderObject.h"
 
-RenderObject::RenderObject(const Mesh &mesh, const Material &mat, const Transform &transform) : mesh(mesh), mat(mat), transform(transform),
-                                                                                                   isStatic(false) {
+RenderObject::RenderObject(const Mesh &mesh, const Material &mat, const Transform &transform) :
+mesh(mesh), mat(mat), transform(transform),isStatic(false) {
 
 }

@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "Transform.h"
 #include "Material.h"
+#include "Shader.h"
 
 
 struct RenderObject {

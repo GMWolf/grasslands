@@ -79,7 +79,7 @@ int main() {
 
 
     // During init, enable debug output
-    //glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
 
 
@@ -176,10 +176,13 @@ int main() {
         }
     }
 
+    DynamicBatch batch(objects);
+
+    /*
     for(auto& robj : objects) {
         //octree.root.insert(&robj);
         bvh.insert(&robj);
-    }
+    }*/
 
 
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
@@ -208,16 +211,17 @@ int main() {
 
         //Rotate
         for(RenderObject& o : objects) {
-            //o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+            o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
         renderer.numObject = 0;
-        renderer.submit(bvh);
+        //renderer.submit(bvh);
+        renderer.renderBatch(batch);
         //std::cout << renderer.numObject << std::endl;
         //renderer.submit(octree.root);
         //renderer.submit(objects);
 
-        renderer.flushBatches();
+        //renderer.flushBatches();
 
         renderer.numObject = 0;
 

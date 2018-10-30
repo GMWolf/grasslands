@@ -2,8 +2,8 @@
 // Created by felix on 27/08/2018.
 //
 
-#ifndef PROXIMA_SHADER_H
-#define PROXIMA_SHADER_H
+#ifndef WAGLE2_SHADER_H
+#define WAGLE2_SHADER_H
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -50,4 +50,4 @@ private:
 };
 
 
-#endif //PROXIMA_SHADER_H
+#endif //WAGLE2_SHADER_H

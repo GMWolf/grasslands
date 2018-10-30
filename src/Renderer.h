@@ -16,7 +16,9 @@
 #include "Material.h"
 #include "Camera.h"
 #include "BVH.h"
-
+#include <deque>
+#include "Batch.h"
+/*
 struct DrawElementsIndirectCommand{
     GLuint count;
     GLuint instanceCount;
@@ -25,41 +27,60 @@ struct DrawElementsIndirectCommand{
     GLuint baseInstance;
 };
 
-struct ComputeDispatchCommand {
+struct ComputeCullCommand {
     GLuint meshIndex;
-};
-
+};*/
+/*
+class BatchBuffer;
 struct Batch {
-    Batch();
+    Batch(BatchBuffer* batchBuffer, GLuint bufferOffset, GLuint bufferSize);
     ~Batch();
 
-    static const GLuint bufferCount = 6;
-    static const GLuint bufferSize = 2048;
-
-    const MeshBuffer* meshBuffer;
-    const MaterialArray* materialArray;
-
-    GLuint bufferIndex = 0;
-
+    BatchBuffer* batchBuffer;
+    GLuint bufferOffset;
+    GLuint bufferSize;
     GLuint commandCount = 0;
+
+    Shader* shader;
+    MeshBuffer* meshBuffer;
+    MaterialArray* materialArray;
+
+    ComputeCullCommand* commands;
+    GLuint *materialIndices;
+    Transform *transforms;
+
+    void add(const Mesh &mesh, const Material& material, const Transform& transform);
+
+    bool valid = true;
+};
+
+//BatchBuffer holds buffers batches use, along with fencing off bits of the buffer
+class BatchBuffer {
+public:
+    BatchBuffer(int batchSize, int batchCount);
+    ~BatchBuffer();
 
     union {
         GLuint bufferObjects[4];
         struct {
-            GLuint computeCommandsBuffer;
+            GLuint computeCullCommandsBuffer;
             GLuint indirectBuffer;
             GLuint materialIndexBuffer;
             GLuint transformBuffer;
         };
     };
 
-    ComputeDispatchCommand* commands[bufferCount];
-    GLuint *materialIndices[bufferCount];
-    Transform *transforms[bufferCount];
+    ComputeCullCommand* commandsPtr;
+    GLuint * materialIndicesPtr;
+    Transform* transformsPtr;
 
-    GLsync fences[bufferCount];
+    int batchSize;
+    int batchCount;
+
+    std::deque<GLuint> waitingBatches; //batches ready to be used
+    std::deque<std::pair<GLuint, GLsync>> activeBatches; //Batches submitted
 };
-
+*/
 
 class Renderer {
 
@@ -67,29 +88,33 @@ public:
 
     Renderer();
 
-    void submit(const Mesh &mesh, const Material& material, const Transform &transform);
+    //void submit(const Mesh &mesh, const Material& material, const Transform &transform);
 
-    void submit(const RenderObject& robj);
+   /* void submit(const RenderObject& robj);
 
     void submit(const std::vector<RenderObject>& objs);
 
     void submit(BVH& bvh);
 
-    void submit(OctreeNode& octree);
+    void submit(OctreeNode& octree);*/
 
-    void flushBatches();
+    //void flushBatches();
 
     void setProjection(const glm::mat4& proj);
     void setEyePos(const glm::vec3& pos);
 
 //private:
-    void renderbatch(Batch& batch);
+    //void renderbatch(Batch& batch);
+
+    void renderBatch(Batch& batch);
+    void renderBatch(StaticBatch& batch);
+    void renderBatch(DynamicBatch& batch);
 
     int numObject = 0;
 
     glm::mat4 viewproj;
 
-    Batch batch;
+    //Batch batch;
 
     Shader* shader;
 
