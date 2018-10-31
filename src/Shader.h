@@ -33,7 +33,7 @@ public:
     GLint getUniformLocation(const std::string &name);
 
     template<class T>
-    void setUniform(GLint location,const T& value);
+    void setUniform(GLint location, const T& value);
 
     operator bool() {
         return compiled;

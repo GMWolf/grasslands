@@ -109,19 +109,18 @@ bool OOBBInFrustrum(vec3 min, vec3 max, Transform transform, mat4 viewproj) {
     bbox[6] = toClipSpace * vec4(min[0], min[1], max[2], 1.f);
     bbox[7] = toClipSpace * vec4(min[0], min[1], min[2], 1.f);
 
-    //Check to that all points lay inside
-    //TODO deal when bbox is around frustum
-    bool inside = false;
+    bvec3 allGt = bvec3(true);
+    bvec3 allLt = bvec3(true);
     for(int i = 0; i < 8; i++) {
         //Equivalent to / by w, then lessthan(1)
-        bvec3 gt = greaterThan(bbox[i].xyz, -vec3(bbox[i].w));
-        bvec3 lt = lessThan(bbox[i].xyz , vec3(bbox[i].w));
-        bool vertInside = all(gt) && all(lt);
-        inside = (inside || vertInside);
+        bvec3 gt = greaterThan(bbox[i].xyz, vec3(bbox[i].w));
+        bvec3 lt = lessThan(bbox[i].xyz , -vec3(bbox[i].w));
+        allGt = bvec3(allGt.x && gt.x, allGt.y && gt.y, allGt.z && gt.z);
+        allLt = bvec3(allLt.x && lt.x, allLt.y && lt.y, allLt.z && lt.z);
     }
 
 
-    return inside;
+    return !(any(allGt) || any(allLt));
 }
 void main() {
 

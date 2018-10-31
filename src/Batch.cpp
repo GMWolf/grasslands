@@ -51,11 +51,16 @@ DynamicBatch::DynamicBatch(std::vector<RenderObject> &robj) :
     glNamedBufferStorage(computeCullCommandsBuffer, batchSize * sizeof(ComputeCullCommand), commands, 0);
     glNamedBufferStorage(indirectBuffer, batchSize * sizeof(DrawElementsIndirectCommand), nullptr, 0);
     glNamedBufferStorage(materialIndexBuffer, batchSize * sizeof(GLuint), materialIndices, 0);
-    //Transform needs to change
-    glNamedBufferStorage(transformBuffer, batchSize * sizeof(Transform), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |GL_DYNAMIC_STORAGE_BIT | GL_MAP_COHERENT_BIT);
+
+    //multi buffered transform buffer
+    glNamedBufferStorage(transformBuffer, buffCount * batchSize * sizeof(Transform), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |GL_DYNAMIC_STORAGE_BIT | GL_MAP_COHERENT_BIT);
+
+    for(int i = 0; i < buffCount; i++) {
+        fence[i] = nullptr;
+    }
 
     assert(batchSize > 0);
-    transforms = static_cast<Transform*>(glMapNamedBufferRange(transformBuffer, 0, batchSize * sizeof(Transform), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+    transforms = static_cast<Transform*>(glMapNamedBufferRange(transformBuffer, 0, buffCount * batchSize * sizeof(Transform), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
 
 
     for(int i = 0; i < batchSize; i++) {

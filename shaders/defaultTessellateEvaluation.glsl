@@ -2,7 +2,7 @@
 
 #define E 2.71827
 
-layout(triangles, fractional_even_spacing, ccw) in;
+layout(triangles, equal_spacing, ccw) in;
 
 in VertexIn {
        vec3 normal;
@@ -61,13 +61,13 @@ void main() {
     vec3 vv2 = gl_TessCoord.z * IN[2].viewVector;
     vec3 viewVector = vv0 + vv1 + vv2;
 
-    float pinchEdge = gl_TessCoord.x * gl_TessCoord.y * gl_TessCoord.z;
-    pinchEdge = smoothstep(0, 1, pinchEdge * 500);
+    /*float pinchEdge = gl_TessCoord.x * gl_TessCoord.y * gl_TessCoord.z;
+    pinchEdge = smoothstep(0, 1, pinchEdge * 500);*/
 
     material mat = materials[materialIndex[IN[0].drawID]];
     float d = textureLod(tex, vec3(texcoord, mat.disp),1).x;
     d = (d * 2.0) - 1;
-    d *= 0.02 * pinchEdge;
+    d *= 0.02 ;//* pinchEdge;
 
     pos += normal * d;
 

@@ -42,16 +42,20 @@ struct Batch {
 
 struct StaticBatch : public Batch {
     explicit StaticBatch(std::vector<RenderObject>& robj);
-
 };
 
 struct DynamicBatch : public Batch {
+
+    static const int buffCount = 3;
+
     explicit DynamicBatch(std::vector<RenderObject>& robjs);
 
     std::vector<RenderObject>& objects;
     Transform* transforms;
 
-    GLsync fence = nullptr;
+    int bufferIndex = 0;
+
+    GLsync fence[buffCount];
 };
 
 

@@ -230,7 +230,8 @@ void Renderer::submit(BVH &bvh) {
 
 void Renderer::renderBatch(Batch &batch) {
     dispatchCompute->use();
-    dispatchCompute->setUniform(0, 0); //offset
+
+    dispatchCompute->setUniform(0, 0u); //offset
 
     //GPU Culling
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.meshBuffer.meshDataBuffer);
@@ -238,9 +239,12 @@ void Renderer::renderBatch(Batch &batch) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, batch.transformBuffer);
 
+
+
     glDispatchCompute(batch.batchSize, 1, 1);
 
     glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+
 
     //render indirect
     shader->use();
@@ -253,6 +257,7 @@ void Renderer::renderBatch(Batch &batch) {
     //TODO set texture arrays
 
     glMultiDrawElementsIndirect(GL_PATCHES, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
+
 }
 
 void Renderer::renderBatch(StaticBatch &batch) {
@@ -261,24 +266,32 @@ void Renderer::renderBatch(StaticBatch &batch) {
 
 void Renderer::renderBatch(DynamicBatch &batch) {
 
-    if(batch.fence) {
+    //wait on fence
+    if(batch.fence[batch.bufferIndex]) {
         GLenum timeoutflag;
+        int n = 0;
         do {
-            timeoutflag = glClientWaitSync(batch.fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+            timeoutflag = glClientWaitSync(batch.fence[batch.bufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 10);
+            n++;
         } while (timeoutflag == GL_TIMEOUT_EXPIRED);
-
-        batch.fence = nullptr;
+        std::cout << n << "\n";
+        batch.fence[batch.bufferIndex] = nullptr;
     }
+
 
     //update the transforms
     for(int i = 0; i < batch.batchSize; i++) {
-        batch.transforms[i] = batch.objects[i].transform;
+        batch.transforms[i + (batch.bufferIndex * batch.batchSize)] = batch.objects[i].transform;
     }
+
     //submit
     renderBatch(static_cast<Batch&>(batch));
 
     //fence
-    batch.fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    batch.fence[batch.bufferIndex] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+    //change buffer id
+    batch.bufferIndex = (batch.bufferIndex+1) % DynamicBatch::buffCount;
 }
 
 

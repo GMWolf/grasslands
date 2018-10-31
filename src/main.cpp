@@ -75,13 +75,11 @@ int main() {
 
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
-    //glfwSwapInterval(0);
-
+    glfwSwapInterval(0);
 
     // During init, enable debug output
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
-
 
     MeshBuffer meshBuffer;
     TextureGroup group;
@@ -158,7 +156,7 @@ int main() {
     std::cout << "built octree" << std::endl;*/
     BVH bvh(128);
 
-    int halfSize = 3;
+    int halfSize = 2;
     //submit a lot of suzanes
     for (int i = -halfSize; i < halfSize; i++) {
         for (int j = -halfSize; j < halfSize; j++) {
@@ -211,7 +209,7 @@ int main() {
 
         //Rotate
         for(RenderObject& o : objects) {
-            o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+            //o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
         renderer.numObject = 0;
