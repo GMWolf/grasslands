@@ -9,6 +9,7 @@ in VertexIn {
        flat uint drawID;
        vec2 texcoord;
        vec3 viewVector;
+       float texSize;
 } IN[];
 
 out Vertex {
@@ -61,13 +62,24 @@ void main() {
     vec3 vv2 = gl_TessCoord.z * IN[2].viewVector;
     vec3 viewVector = vv0 + vv1 + vv2;
 
-    /*float pinchEdge = gl_TessCoord.x * gl_TessCoord.y * gl_TessCoord.z;
-    pinchEdge = smoothstep(0, 1, pinchEdge * 500);*/
+    float ts0 = gl_TessCoord.x * IN[0].texSize;
+    float ts1 = gl_TessCoord.y * IN[1].texSize;
+    float ts2 = gl_TessCoord.z * IN[2].texSize;
+    float texSize = ts0 + ts1 + ts2;
+
+
+    //float pinchEdge = 1.0;
+    float pinchEdge = gl_TessCoord.x * gl_TessCoord.y * gl_TessCoord.z;
+    pinchEdge = smoothstep(0, 1, pinchEdge * 500);
 
     material mat = materials[materialIndex[IN[0].drawID]];
-    float d = textureLod(tex, vec3(texcoord, mat.disp),1).x;
+
+    float levels = textureQueryLevels(tex);
+    float lodLevel = levels - log2(texSize);
+
+    float d = textureLod(tex, vec3(texcoord, mat.disp), lodLevel).x;
     d = (d * 2.0) - 1;
-    d *= 0.02 ;//* pinchEdge;
+    d *= 0.02 * pinchEdge;
 
     pos += normal * d;
 

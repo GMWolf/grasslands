@@ -52,7 +52,7 @@ bool Shader::testLink(GLuint program) {
     return true;
 }
 
-void Shader::use() {
+void Shader::use() const{
     glUseProgram(program);
 }
 

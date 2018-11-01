@@ -13,6 +13,7 @@
 #include "Camera.h"
 #include "Octree.h"
 #include "Material.h"
+#include "SETTINGS.h"
 
 
 void error_callback(int error, const char *description) {
@@ -89,9 +90,10 @@ int main() {
     Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
     Mesh grass = ObjLoader::load(meshBuffer, "../grass.obj");
+    Mesh cube = ObjLoader::load(meshBuffer, "../cube.obj");
 
-    Mesh meshes[4] = {
-            suzane, knot, box, gear
+    Mesh meshes[] = {
+            suzane, knot, box, gear, cube
     };
 
 
@@ -115,27 +117,38 @@ int main() {
     Texture MetalRAM = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_roughAOMetalic.DDS");
     Texture MetalHeight = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_height.DDS");
 
-    MaterialArray matArray;
-    Material mat1 = matArray.addMaterial(RockDiffuse, RockNormal, RockRAM, RockHeight);
-    Material mat2 = matArray.addMaterial(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight);
-    Material mat3 = matArray.addMaterial(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight);
-    Material mat4 = matArray.addMaterial(MetalDiffuse, MetalNormal, MetalRAM, MetalHeight);
+    std::ifstream pbr_vertFile("../shaders/PBRVertex.glsl");
+    std::string pbr_vertexText((std::istreambuf_iterator<char>(pbr_vertFile)), (std::istreambuf_iterator<char>()));
+    std::ifstream pbrtess_vertFile("../shaders/PBRTessVertex.glsl");
+    std::string pbrtess_vertexText((std::istreambuf_iterator<char>(pbrtess_vertFile)), (std::istreambuf_iterator<char>()));
+    std::ifstream pbr_contFile("../shaders/PBRTessellateControl.glsl");
+    std::string pbr_contText((std::istreambuf_iterator<char>(pbr_contFile)), (std::istreambuf_iterator<char>()));
+    std::ifstream pbr_evalFile("../shaders/PBRTessellateEvaluation.glsl");
+    std::string pbr_evalText((std::istreambuf_iterator<char>(pbr_evalFile)), (std::istreambuf_iterator<char>()));
+    std::ifstream pbr_fragFile("../shaders/PBRFragment.glsl");
+    std::string pbr_fragText((std::istreambuf_iterator<char>(pbr_fragFile)), (std::istreambuf_iterator<char>()));
+
+    Shader* pbrTesselateShader = new Shader({
+        {GL_VERTEX_SHADER, pbrtess_vertexText},
+        {GL_TESS_CONTROL_SHADER, pbr_contText},
+        {GL_TESS_EVALUATION_SHADER, pbr_evalText},
+        {GL_FRAGMENT_SHADER, pbr_fragText}
+    });
+    Shader* pbrShader = new Shader({
+        {GL_VERTEX_SHADER, pbr_vertexText},
+        {GL_FRAGMENT_SHADER, pbr_fragText}
+    });
+
+    MaterialType<MaterialData> pbrType(pbrShader,10);
+    MaterialType<MaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
+    Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM, RockHeight));
+    Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
+    Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight));
+    Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM, MetalHeight));
 
     Material materials[] {
         mat1,mat2,mat3,mat4
     };
-
-    std::vector<vertexData> vertices = {
-            vertexData(glm::vec3(-1, -1, 0), glm::vec3(1, 1, 1), glm::vec2(0, 1)), //0
-            vertexData(glm::vec3(-1, 1, 0), glm::vec3(1, 1, 1), glm::vec2(0, 0)),  //1
-            vertexData(glm::vec3(1, -1, 0), glm::vec3(1, 1, 1), glm::vec2(1, 1)),  //2
-            vertexData(glm::vec3(1, 1, 0), glm::vec3(1, 1, 1), glm::vec2(1, 0))    //3
-    };
-    std::vector<GLushort> vertexElements = {0, 1, 2, 1, 2, 3};
-
-    Mesh rect = meshBuffer.getMesh(vertices, vertexElements);
-    //suzane.setElementData(vertexElements);
-
 
     Renderer renderer;
     Camera camera;
@@ -149,6 +162,7 @@ int main() {
     float time = 0;
 
     std::vector<RenderObject> objects;
+    std::vector<RenderObject*> objptr;
     srand(10);
 
 
@@ -156,15 +170,15 @@ int main() {
     std::cout << "built octree" << std::endl;*/
     BVH bvh(128);
 
-    int halfSize = 2;
+    int halfSize = 32;
     //submit a lot of suzanes
     for (int i = -halfSize; i < halfSize; i++) {
         for (int j = -halfSize; j < halfSize; j++) {
             for (int k = -halfSize; k < halfSize; k++) {
                 Material &mat = materials[rand() % 4];
-                Mesh &m = meshes[rand() % 4];
+                Mesh &m = meshes[rand() % 5];
 
-                Transform transform;
+                Transform transform{};
                 transform.pos = glm::vec3(i, j, k) * 3.0f;
                 transform.scale = 1;
                 transform.rot = glm::quat(glm::vec3(0, 0, 0));
@@ -174,19 +188,17 @@ int main() {
         }
     }
 
-    DynamicBatch batch(objects);
+    for(auto& o : objects) {
+        objptr.emplace_back(&o);
+    }
 
-    /*
-    for(auto& robj : objects) {
-        //octree.root.insert(&robj);
-        bvh.insert(&robj);
-    }*/
+    renderer.addObjects(objptr);
 
 
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
 
-        double thisTime = glfwGetTime();
-        double dt = thisTime - lastTime;
+        float thisTime = glfwGetTime();
+        float dt = thisTime - lastTime;
         lastTime = thisTime;
         time += dt;
 
@@ -198,10 +210,11 @@ int main() {
         float ratio = width / (float) height;
 
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 1000.f);
+        projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 10000.f);
 
         camera.update(window, dt);
-        renderer.setProjection(projection * camera.view);
+        renderer.setProjection(projection);
+        renderer.setView(camera.view);
         renderer.setEyePos(camera.pos);
 
         suzane.buffer->bindVa();
@@ -209,17 +222,17 @@ int main() {
 
         //Rotate
         for(RenderObject& o : objects) {
-            //o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+            o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
         renderer.numObject = 0;
         //renderer.submit(bvh);
-        renderer.renderBatch(batch);
-        //std::cout << renderer.numObject << std::endl;
-        //renderer.submit(octree.root);
-        //renderer.submit(objects);
-
-        //renderer.flushBatches();
+        for(auto &batch : renderer.dynamicBatches) {
+            renderer.renderBatch(batch);
+        }
+        for(auto &batch : renderer.staticBatches) {
+            renderer.renderBatch(batch);
+        }
 
         renderer.numObject = 0;
 

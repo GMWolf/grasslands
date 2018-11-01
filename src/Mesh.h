@@ -11,6 +11,7 @@
 
 #include <vector>
 #include "glTypes.h"
+#include "SETTINGS.h"
 
 struct vertexData {
     vertexData(const glm::vec3& p, const glm::vec3& n, const glm::vec2& t);

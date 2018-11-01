@@ -28,7 +28,7 @@ public:
 
     Shader &operator=(Shader &&other) noexcept;
 
-    void use();
+    void use() const;
 
     GLint getUniformLocation(const std::string &name);
 

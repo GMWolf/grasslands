@@ -18,6 +18,7 @@
 #include "BVH.h"
 #include <deque>
 #include "Batch.h"
+#include <map>
 /*
 struct DrawElementsIndirectCommand{
     GLuint count;
@@ -101,25 +102,32 @@ public:
     //void flushBatches();
 
     void setProjection(const glm::mat4& proj);
+    void setView(const glm::mat4& view);
     void setEyePos(const glm::vec3& pos);
 
-//private:
-    //void renderbatch(Batch& batch);
 
     void renderBatch(Batch& batch);
     void renderBatch(StaticBatch& batch);
     void renderBatch(DynamicBatch& batch);
 
+
     int numObject = 0;
 
-    glm::mat4 viewproj;
+    glm::mat4 view;
+    glm::mat4 proj;
 
     //Batch batch;
 
-    Shader* shader;
+    void addObjects(std::vector<RenderObject*>& renderObjects);
+
+    std::vector<StaticBatch> staticBatches;
+    std::vector<DynamicBatch> dynamicBatches;
 
     Shader* dispatchCompute;
+    glm::vec3 eyePos;
 };
+
+
 
 
 #endif //GRASSLANDS_RENDERER_H

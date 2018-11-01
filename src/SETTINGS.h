@@ -1,0 +1,9 @@
+//
+// Created by b5023110 on 01/11/2018.
+//
+
+#ifndef GRASSLANDS_SETTINGS_H
+#define GRASSLANDS_SETTINGS_H
+
+#define MAX_BATCH_SIZE 8192
+#endif //GRASSLANDS_SETTINGS_H

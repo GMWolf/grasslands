@@ -22,10 +22,10 @@ struct ComputeCullCommand {
 };
 
 struct Batch {
-    Batch(GLuint batchSize, MeshBuffer& mb, MaterialArray& ma);
+    Batch(GLuint batchSize, MeshBuffer& mb, baseMaterialType& ma);
 
     MeshBuffer& meshBuffer;
-    MaterialArray& materialArray;
+    baseMaterialType& matType;
 
     GLuint batchSize;
 
@@ -41,17 +41,19 @@ struct Batch {
 };
 
 struct StaticBatch : public Batch {
-    explicit StaticBatch(std::vector<RenderObject>& robj);
+    explicit StaticBatch(std::vector<RenderObject*>& robj);
 };
 
 struct DynamicBatch : public Batch {
 
     static const int buffCount = 3;
 
-    explicit DynamicBatch(std::vector<RenderObject>& robjs);
+    explicit DynamicBatch(std::vector<RenderObject*>& robjs);
 
-    std::vector<RenderObject>& objects;
-    Transform* transforms;
+    std::vector<RenderObject*> objects;
+    Transform* transforms[buffCount];
+
+    GLuint transformBuffers[buffCount];
 
     int bufferIndex = 0;
 

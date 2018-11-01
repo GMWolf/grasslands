@@ -23,7 +23,7 @@ MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
     glCreateVertexArrays(1, &vertexArray);
 
     //Setup storage
-    GLint batchSize = 2048*6;
+    GLint batchSize = MAX_BATCH_SIZE;
     GLuint* ids = new GLuint[batchSize];
     for(GLuint i = 0; i < batchSize; i++) {
         ids[i] = i;
@@ -64,7 +64,6 @@ MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
 
     //set element meshBuffer
     glVertexArrayElementBuffer(vertexArray, elementBuffer);
-
 
     //setup mesh data
     GLuint meshCount = 10;

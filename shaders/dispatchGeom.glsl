@@ -30,8 +30,7 @@ struct Transform
        vec4 rot;
 };
 
-layout(location = 0) uniform uint u_Offset;
-layout(location = 1) uniform mat4 u_viewproj;
+layout(location = 0) uniform mat4 u_viewproj;
 
 layout(std430, binding = 0) readonly buffer meshDataBuffer {
     Mesh meshData[];
@@ -124,7 +123,7 @@ bool OOBBInFrustrum(vec3 min, vec3 max, Transform transform, mat4 viewproj) {
 }
 void main() {
 
-    uint index = gl_GlobalInvocationID.x + u_Offset;
+    uint index = gl_GlobalInvocationID.x;
 
     Mesh m = meshData[inputCommands[index].meshIndex];
 

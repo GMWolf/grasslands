@@ -6,11 +6,17 @@
 #define GRASSLANDS_MATERIAL_H
 
 #include "Texture.h"
+#include "Shader.h"
 
 struct MaterialData {
 
+
+
     MaterialData(GLuint diffuse, GLuint normal, GLuint ram, GLuint disp)
     : diffuseLayer(diffuse), normalLayer(normal), RAMLayer(ram), dispLayer(disp){
+    }
+    MaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp)
+    : MaterialData(diffuse.layer, normal.layer, ram.layer, disp.layer) {
     }
 
     GLuint diffuseLayer;
@@ -19,36 +25,48 @@ struct MaterialData {
     GLuint dispLayer;
 };
 
-class MaterialArray;
+
+class baseMaterialType;
 struct Material {
-    Material(MaterialArray* array, GLuint index) :array(array), index(index) {
+    Material(baseMaterialType* type, GLuint index) : type(type), index(index) {
     }
     GLuint index;
-    MaterialArray* array;
+    baseMaterialType* type;
 };
 
-class MaterialArray {
+
+class baseMaterialType {
     friend class Renderer;
 public:
-    MaterialArray() {
-        glCreateBuffers(1, &buffer);
-        glNamedBufferStorage(buffer, materialCount * sizeof(MaterialData), nullptr, GL_DYNAMIC_STORAGE_BIT);
-    }
+    baseMaterialType(Shader* shader, GLenum primitiveType, uint32_t count, size_t dataSize);
 
-    Material addMaterial(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp) {
-        MaterialData md(diffuse.layer, normal.layer, ram.layer, disp.layer);
-        GLuint id = nextID++;
-        glNamedBufferSubData(buffer, id * sizeof(MaterialData), sizeof(MaterialData), &md);
-
-        return Material(this, id);
-    }
-
+    Material addMaterial(void* data);
 
 private:
+    GLenum primType;
     GLuint nextID = 0;
-    const int materialCount = 10;
+    Shader* shader;
     GLuint buffer = 0;
-
+    const size_t dataSize;
+    const uint32_t  count;
 };
+
+template<class T, int PRIMITIVE_TYPE = GL_TRIANGLES>
+class MaterialType : baseMaterialType{
+
+public:
+    MaterialType(Shader* shader, uint32_t count);
+
+    Material addMaterial(const T& data);
+};
+
+template<class T, int P>
+MaterialType<T, P>::MaterialType(Shader *shader, uint32_t count) :  baseMaterialType(shader, P, count, sizeof(T)) {
+}
+
+template<class T, int P>
+Material MaterialType<T, P>::addMaterial(const T &data) {
+    return baseMaterialType::addMaterial((void*)&data);
+}
 
 #endif //GRASSLANDS_MATERIAL_H

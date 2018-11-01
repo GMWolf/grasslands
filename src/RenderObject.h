@@ -14,7 +14,7 @@
 
 struct RenderObject {
 
-    RenderObject(const Mesh& mesh, const Material& mat, const Transform& transform);
+    RenderObject(const Mesh& mesh, const Material& mat, const Transform& transform, const bool s = false);
 
     const Mesh& mesh;
     const Material& mat;

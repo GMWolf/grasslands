@@ -10,29 +10,6 @@
 Renderer::Renderer() {
 
 
-    std::ifstream vertFile("../shaders/BasicVertex.glsl");
-    std::string vertexText((std::istreambuf_iterator<char>(vertFile)), (std::istreambuf_iterator<char>()));
-
-    //std::ifstream vertFile("../defaultVertex.glsl");
-    //std::string vertexText((std::istreambuf_iterator<char>(vertFile)), (std::istreambuf_iterator<char>()));
-
-    std::ifstream fragFile("../shaders/defaultFragment.glsl");
-    std::string fragText((std::istreambuf_iterator<char>(fragFile)), (std::istreambuf_iterator<char>()));
-
-    std::ifstream contFile("../shaders/defaultTessellateControl.glsl");
-    std::string contText((std::istreambuf_iterator<char>(contFile)), (std::istreambuf_iterator<char>()));
-
-    std::ifstream evalFile("../shaders/defaultTessellateEvaluation.glsl");
-    std::string evalText((std::istreambuf_iterator<char>(evalFile)), (std::istreambuf_iterator<char>()));
-
-    shader = new Shader({
-        {GL_VERTEX_SHADER, vertexText},
-        {GL_TESS_CONTROL_SHADER, contText},
-        {GL_TESS_EVALUATION_SHADER, evalText},
-        {GL_FRAGMENT_SHADER, fragText}
-    });
-
-
     std::ifstream dispatchFile("../shaders/dispatchGeom.glsl");
     std::string dispatchText((std::istreambuf_iterator<char>(dispatchFile)), (std::istreambuf_iterator<char>()));
 
@@ -89,14 +66,19 @@ void Renderer::flushBatches() {
 
 }
 */
-void Renderer::setProjection(const glm::mat4 &proj) {
-    shader->setUniform(shader->getUniformLocation("MV"), proj);
-    dispatchCompute->setUniform(1, proj);
-    viewproj = proj;
+void Renderer::setView(const glm::mat4 &v) {
+
+    dispatchCompute->setUniform(0, proj * v);
+    view = v;
+}
+
+void Renderer::setProjection(const glm::mat4 &p) {
+    dispatchCompute->setUniform(0, p * view);
+    proj = p;
 }
 
 void Renderer::setEyePos(const glm::vec3 &pos) {
-    shader->setUniform(shader->getUniformLocation("eyePos"), pos);
+    eyePos = pos;
 }
 /*
 void Renderer::renderbatch(Batch &batch) {
@@ -231,32 +213,31 @@ void Renderer::submit(BVH &bvh) {
 void Renderer::renderBatch(Batch &batch) {
     dispatchCompute->use();
 
-    dispatchCompute->setUniform(0, 0u); //offset
-
     //GPU Culling
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.meshBuffer.meshDataBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.computeCullCommandsBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, batch.transformBuffer);
 
-
-
     glDispatchCompute(batch.batchSize, 1, 1);
 
     glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
-
     //render indirect
+    Shader* shader = batch.matType.shader;
     shader->use();
     shader->setUniform(shader->getUniformLocation("tex"), 0);
+    shader->setUniform(shader->getUniformLocation("projection"), proj);
+    shader->setUniform(shader->getUniformLocation("MV"), proj * view);
+    shader->setUniform(shader->getUniformLocation("eyePos"), eyePos);
+
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.materialArray.buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
 
-    //TODO set texture arrays
-
-    glMultiDrawElementsIndirect(GL_PATCHES, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
+    glMultiDrawElementsIndirect(batch.matType.primType, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
+    //glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
 
 }
 
@@ -274,15 +255,14 @@ void Renderer::renderBatch(DynamicBatch &batch) {
             timeoutflag = glClientWaitSync(batch.fence[batch.bufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 10);
             n++;
         } while (timeoutflag == GL_TIMEOUT_EXPIRED);
-        std::cout << n << "\n";
         batch.fence[batch.bufferIndex] = nullptr;
     }
 
-
     //update the transforms
     for(int i = 0; i < batch.batchSize; i++) {
-        batch.transforms[i + (batch.bufferIndex * batch.batchSize)] = batch.objects[i].transform;
+        batch.transforms[batch.bufferIndex][i] = batch.objects[i]->transform;
     }
+    batch.transformBuffer = batch.transformBuffers[batch.bufferIndex];
 
     //submit
     renderBatch(static_cast<Batch&>(batch));
@@ -293,6 +273,47 @@ void Renderer::renderBatch(DynamicBatch &batch) {
     //change buffer id
     batch.bufferIndex = (batch.bufferIndex+1) % DynamicBatch::buffCount;
 }
+
+void Renderer::addObjects(std::vector<RenderObject *> &renderObjects) {
+
+    std::map<baseMaterialType*, std::unique_ptr<std::vector<RenderObject*>>> staticObjects;
+    std::map<baseMaterialType*, std::unique_ptr<std::vector<RenderObject*>>> dynamicObjects;
+
+    for(auto o : renderObjects) {
+        baseMaterialType* matType = o->mat.type;
+        auto& group = o->isStatic ? staticObjects : dynamicObjects;
+
+        if (group.find(matType) == group.end()) {
+            group[matType] = std::make_unique<std::vector<RenderObject*>>();
+        }
+
+        auto& vec = *group[matType];
+        vec.emplace_back(o);
+
+        if(vec.size() >= MAX_BATCH_SIZE) {
+            if (o->isStatic) {
+                staticBatches.emplace_back(vec);
+                vec.clear();
+            } else {
+                dynamicBatches.emplace_back(vec);
+                vec.clear();
+            }
+        }
+
+    }
+
+    for(auto& e : staticObjects) {
+        staticBatches.emplace_back(*e.second);
+        e.second->clear();
+    }
+    for(auto& e : dynamicObjects) {
+        dynamicBatches.emplace_back(*e.second);
+        e.second->clear();
+    }
+
+}
+
+
 
 
 /*
