@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <glm.hpp>
 #include <gtc/type_ptr.hpp>
+#include <vector>
 
 Shader::Shader(std::map<GLenum, std::string> sources) {
 
@@ -108,6 +109,11 @@ void Shader::setUniform(GLint location,  const glm::vec3& value) {
 template<>
 void Shader::setUniform(GLint location, const glm::mat4 &value) {
     glProgramUniformMatrix4fv(program, location, 1, GL_FALSE, value_ptr(value));
+}
+
+template<>
+void Shader::setUniform(GLint location, const std::vector<unsigned int> &value) {
+    glProgramUniform1uiv(program, location, value.size(), value.data());
 }
 
 //endregion

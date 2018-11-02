@@ -13,6 +13,7 @@
 #include "Camera.h"
 #include "Octree.h"
 #include "Material.h"
+#include "gtc/random.hpp"
 #include "SETTINGS.h"
 
 
@@ -41,7 +42,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-
+struct GrassMatData {
+    GLuint albedoLayer;
+    GLuint normalLayer;
+    GLuint roughAlphaLayer;
+    GLuint translucencyLayer;
+};
 
 int main() {
 
@@ -57,6 +63,8 @@ int main() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
     window = glfwCreateWindow(1280, 720, "Grasslands", NULL, NULL);
@@ -80,7 +88,7 @@ int main() {
 
     // During init, enable debug output
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(MessageCallback, 0);
+    //glDebugMessageCallback(MessageCallback, 0);
 
     MeshBuffer meshBuffer;
     TextureGroup group;
@@ -91,11 +99,11 @@ int main() {
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
     Mesh grass = ObjLoader::load(meshBuffer, "../grass.obj");
     Mesh cube = ObjLoader::load(meshBuffer, "../cube.obj");
+    Mesh quad = ObjLoader::load(meshBuffer, "../quad.obj");
 
     Mesh meshes[] = {
-            suzane, knot, box, gear, cube
+            suzane, knot, box, gear
     };
-
 
     Texture RockDiffuse = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_albedo.DDS");
     Texture RockNormal = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_normal.DDS");
@@ -116,6 +124,10 @@ int main() {
     Texture MetalNormal = loadDDS(group,  "../textures/MetalThreadplate/Metal_ThreadplateBare_normal.DDS");
     Texture MetalRAM = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_roughAOMetalic.DDS");
     Texture MetalHeight = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_height.DDS");
+
+    Texture GroundAlbedo = loadDDS(group, "../textures/Soil/Soil2_albedo.DDS");
+    Texture GroundNormal = loadDDS(group, "../textures/Soil/Soil2_normal.DDS");
+    Texture GroundRAM    = loadDDS(group, "../textures/Soil/Soil2_RAM.DDS");
 
     std::ifstream pbr_vertFile("../shaders/PBRVertex.glsl");
     std::string pbr_vertexText((std::istreambuf_iterator<char>(pbr_vertFile)), (std::istreambuf_iterator<char>()));
@@ -142,13 +154,40 @@ int main() {
     MaterialType<MaterialData> pbrType(pbrShader,10);
     MaterialType<MaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
     Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM, RockHeight));
-    Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
+    Material mat2 = pbrTessType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
     Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight));
     Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM, MetalHeight));
+    Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM, GroundAlbedo));
 
     Material materials[] {
         mat1,mat2,mat3,mat4
     };
+
+
+
+    std::ifstream grass_vertFile("../shaders/grassVertex.glsl");
+    std::string grass_vertText((std::istreambuf_iterator<char>(grass_vertFile)), (std::istreambuf_iterator<char>()));
+    std::ifstream grass_fragFile("../shaders/grassFragment.glsl");
+    std::string grass_fragText((std::istreambuf_iterator<char>(grass_fragFile)), (std::istreambuf_iterator<char>()));
+
+    Shader* grassShader = new Shader({
+        {GL_VERTEX_SHADER, grass_vertText},
+        {GL_FRAGMENT_SHADER, grass_fragText}
+    });
+
+    Texture grass12Albedo = loadDDS(group, "../textures/Grass12/Grass12_albedo.DDS");
+    Texture grass12Normal = loadDDS(group, "../textures/Grass12/Grass12_normal.DDS");
+    Texture grass12RA     = loadDDS(group, "../textures/Grass12/Grass12_roughAlpha.DDS");
+    Texture grass12Tr     = loadDDS(group, "../textures/Grass12/Grass12_translucency.DDS");
+
+    Texture weed11Albedo = loadDDS(group, "../textures/Weed11/Weed_Various11_albedo.DDS");
+    Texture weed11Normal = loadDDS(group, "../textures/Weed11/Weed_Various11_normal.DDS");
+    Texture weed11RA     = loadDDS(group, "../textures/Weed11/Weed_Various11_RA.DDS");
+    Texture weed11Tr     = loadDDS(group, "../textures/Weed11/Weed_Various11_translucency.DDS");
+
+    MaterialType<GrassMatData> grassType(grassShader, 10);
+    Material matGrass12 = grassType.addMaterial({grass12Albedo.layer, grass12Normal.layer, grass12RA.layer, grass12Tr.layer});
+    Material matWeed11  = grassType.addMaterial({weed11Albedo.layer, weed11Normal.layer, weed11RA.layer, weed11Tr.layer});
 
     Renderer renderer;
     Camera camera;
@@ -157,6 +196,8 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    //glEnable(GL_FRAMEBUFFER_SRGB);
 
     double lastTime = glfwGetTime();
     float time = 0;
@@ -168,24 +209,43 @@ int main() {
 
     /*Octree octree(50 * 3);
     std::cout << "built octree" << std::endl;*/
-    BVH bvh(128);
 
-    int halfSize = 32;
-    //submit a lot of suzanes
-    for (int i = -halfSize; i < halfSize; i++) {
-        for (int j = -halfSize; j < halfSize; j++) {
-            for (int k = -halfSize; k < halfSize; k++) {
-                Material &mat = materials[rand() % 4];
-                Mesh &m = meshes[rand() % 5];
-
-                Transform transform{};
-                transform.pos = glm::vec3(i, j, k) * 3.0f;
-                transform.scale = 1;
-                transform.rot = glm::quat(glm::vec3(0, 0, 0));
-                objects.emplace_back(m, mat, transform);
-                //octree.root.insert(&objects.back());
-            }
+    for(int i = -100; i < 100; i++) {
+        for(int j = -100; j < 100; j++) {
+            Transform t{};
+            t.pos = glm::vec3(i * 2, 0, j * 2);
+            t.scale = 1;
+            t.rot = glm::quat();
+            objects.emplace_back(quad, matGround, t, true);
         }
+    }
+
+    for(int i = 0; i < 50000; i++) {
+        Transform t{};
+        glm::vec2 pos2D = glm::diskRand(100.f);
+        float clumpScale = (rand() / (float)RAND_MAX) * 0.6f + 0.4f;
+
+        for(int j = 0; j < 5; j++) {
+            glm::vec2 subpos2D = pos2D + glm::diskRand(1.f);
+            t.scale = clumpScale + (rand() / (float)RAND_MAX) * 0.1f - 0.05f;
+            t.pos = glm::vec3(subpos2D.x, 0, subpos2D.y);
+            t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
+            objects.emplace_back(grass, matGrass12, t, true);
+        }
+    }
+
+
+
+    for(int i = 0; i < 60; i++) {
+
+        Transform t{};
+
+        glm::vec2 pos2D = glm::diskRand(100.f);
+        t.pos = glm::vec3(pos2D.x, 5, pos2D.y);
+        t.rot = glm::quat(glm::vec3(0, (rand() / RAND_MAX) * 2 * 3.14159, 0));
+        t.scale = 5;
+
+        objects.emplace_back(meshes[rand() % 4], materials[rand() % 4], t, true);
     }
 
     for(auto& o : objects) {
@@ -202,7 +262,7 @@ int main() {
         lastTime = thisTime;
         time += dt;
 
-        glClearColor(1,1,1,1);
+        glClearColor(0.7,0.7,0.8,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int width, height;
@@ -217,12 +277,11 @@ int main() {
         renderer.setView(camera.view);
         renderer.setEyePos(camera.pos);
 
-        suzane.buffer->bindVa();
-        RockDiffuse.textureArray->bind(0);
-
+        meshBuffer.bindVa();
+        group.bind();
         //Rotate
         for(RenderObject& o : objects) {
-            o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+          //  o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
         renderer.numObject = 0;

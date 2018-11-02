@@ -9,6 +9,7 @@
 #include <map>
 #include <tuple>
 #include <memory>
+#include <vector>
 
 class TextureArray;
 class Texture {
@@ -29,17 +30,19 @@ private:
 class TextureArray {
     friend class Texture;
 public:
-    TextureArray(GLsizei mipmaplevels, GLenum format, GLsizei width, GLsizei height, GLsizei layercount);
+    TextureArray(GLuint unit, GLsizei mipmaplevels, GLenum format, GLsizei width, GLsizei height, GLsizei layercount);
     ~TextureArray();
 
     Texture getTexture();
 
-    void bind(GLint unit);
+    void bind();
 
     const GLsizei width;
     const GLsizei height;
 
+    const GLuint unit;
 private:
+
 
     GLuint nextLayer = 0;
 
@@ -52,10 +55,9 @@ class TextureGroup {
 public:
 
     TextureArray& getArray(GLsizei width, GLsizei height, GLsizei miplevels, GLenum format);
-
-
+    void bind();
 private:
-
+    GLuint nextUnit = 0;
     //tuple goes: width, height, mipmaplevel, format
     std::map<std::tuple<GLsizei, GLsizei, GLsizei, GLenum >, std::unique_ptr<TextureArray>> textureArrays;
 };

@@ -26,6 +26,19 @@ struct material {
     uint disp;
 };
 
+
+struct Transform
+ {
+       vec3 pos;
+       float scale;
+       vec4 rot;
+};
+
+layout(std430, binding = 0) buffer transformBuffer
+{
+    Transform ModelTransform[];
+};
+
 layout(std430, binding = 1) buffer MaterialIndexBuffer {
     uint materialIndex[];
 };
@@ -41,6 +54,8 @@ uniform mat4 MV;
 uniform vec3 eyePos;
 
 void main() {
+
+    Transform t = ModelTransform[IN[0].drawID];
 
     vec3 p0 = gl_TessCoord.x * gl_in[0].gl_Position.xyz;
     vec3 p1 = gl_TessCoord.y * gl_in[1].gl_Position.xyz;
@@ -81,7 +96,7 @@ void main() {
     d = (d * 2.0) - 1;
     d *= 0.02 * pinchEdge;
 
-    pos += normal * d;
+    pos += normal * d * t.scale;
 
     gl_Position = MV * vec4(pos, 1.0);
 

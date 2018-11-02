@@ -226,7 +226,10 @@ void Renderer::renderBatch(Batch &batch) {
     //render indirect
     Shader* shader = batch.matType.shader;
     shader->use();
-    shader->setUniform(shader->getUniformLocation("tex"), 0);
+    static const std::vector<unsigned int> tsamplers {
+            0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u
+    };
+    shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
     shader->setUniform(shader->getUniformLocation("projection"), proj);
     shader->setUniform(shader->getUniformLocation("MV"), proj * view);
     shader->setUniform(shader->getUniformLocation("eyePos"), eyePos);

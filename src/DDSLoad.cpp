@@ -25,6 +25,7 @@ GLubyte defaultTexels[16] = {
 //http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#using-the-compressed-texture
 Texture loadDDS(TextureGroup& group, const std::string filename) {
 
+    std::cout << "loading " << filename << "\n";
     std::ifstream file;
     file.open(filename, std::ios::in | std::ios::binary);
 

@@ -9,9 +9,6 @@
 #include "Shader.h"
 
 struct MaterialData {
-
-
-
     MaterialData(GLuint diffuse, GLuint normal, GLuint ram, GLuint disp)
     : diffuseLayer(diffuse), normalLayer(normal), RAMLayer(ram), dispLayer(disp){
     }
@@ -26,6 +23,7 @@ struct MaterialData {
 };
 
 
+
 class baseMaterialType;
 struct Material {
     Material(baseMaterialType* type, GLuint index) : type(type), index(index) {
@@ -33,6 +31,7 @@ struct Material {
     GLuint index;
     baseMaterialType* type;
 };
+
 
 
 class baseMaterialType {
