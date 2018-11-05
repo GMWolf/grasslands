@@ -13,7 +13,7 @@ OctreeNode::OctreeNode(glm::vec3 center, float halfSize, int maxItems) : center(
 bool OctreeNode::contains(RenderObject *robj) {
 
     //get all 8 corners
-    const glm::vec3& bboxMin = robj->mesh.bboxMin;
+    /*const glm::vec3& bboxMin = robj->mesh.bboxMin;
     const glm::vec3& bboxMax = robj->mesh.bboxMax;
     glm::vec3 corners[8];
     corners[0] = robj->transform.apply(glm::vec3(bboxMin[0], bboxMax[1], bboxMin[2]));
@@ -33,7 +33,8 @@ bool OctreeNode::contains(RenderObject *robj) {
         inside = inside || cornerInside;
     }
 
-    return inside;
+    return inside;*/
+    return all(glm::lessThanEqual(robj->transform.pos, max)) && all(glm::greaterThan(robj->transform.pos, min));
 }
 
 void OctreeNode::insert(RenderObject *renderObject) {
@@ -54,9 +55,6 @@ void OctreeNode::insert(RenderObject *renderObject) {
                         nodes[i].insert(robj);
                     }
                 }
-
-                //std::vector<RenderObject*> bin;
-                //renderObjects.swap(bin);
                 renderObjects.clear();
             }
 
@@ -68,8 +66,4 @@ void OctreeNode::insert(RenderObject *renderObject) {
 
         }
     }
-
-
-
-
 }

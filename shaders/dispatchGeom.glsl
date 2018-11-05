@@ -31,6 +31,7 @@ struct Transform
 };
 
 layout(location = 0) uniform mat4 u_viewproj;
+layout(location = 1) uniform bool u_doCull = true;
 
 layout(std430, binding = 0) readonly buffer meshDataBuffer {
     Mesh meshData[];
@@ -128,8 +129,12 @@ void main() {
     Mesh m = meshData[inputCommands[index].meshIndex];
 
     outputCommands[index].count = m.elementCount;
-    outputCommands[index].instanceCount = uint(OOBBInFrustrum(m.bboxMin, m.bboxmax, transforms[index], u_viewproj));
-    outputCommands[index].firstIndex = m.first;
+    if(u_doCull) {
+        outputCommands[index].instanceCount = uint(OOBBInFrustrum(m.bboxMin, m.bboxmax, transforms[index], u_viewproj));
+    } else {
+        outputCommands[index].instanceCount = 1;
+    }
+     outputCommands[index].firstIndex = m.first;
     outputCommands[index].baseVertex = m.baseVertex;
     outputCommands[index].baseInstance = index;
 }

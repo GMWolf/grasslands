@@ -3,6 +3,7 @@
 //
 
 #include "Batch.h"
+#include <limits>
 
 Batch::Batch(GLuint batchSize, MeshBuffer &mb, baseMaterialType& ma) : batchSize(batchSize), meshBuffer(mb), matType(ma) {
 
@@ -15,10 +16,30 @@ StaticBatch::StaticBatch(std::vector<RenderObject*> &robj) : Batch(robj.size(), 
     auto * materialIndices = new GLuint[batchSize];
     auto * transforms = new Transform[batchSize];
 
+    min = glm::vec3(std::numeric_limits<float>::max());
+    max = glm::vec3(std::numeric_limits<float>::min());
+
     for(int i = 0; i < batchSize; i++) {
         commands[i].meshIndex = robj[i]->mesh.index;
         materialIndices[i] = robj[i]->mat.index;
         transforms[i] = robj[i]->transform;
+
+        const Mesh& mesh = robj[i]->mesh;
+        glm::vec3 corners[8];
+        corners[0] = robj[i]->transform.apply( glm::vec3(mesh.bboxMin[0], mesh.bboxMax[1], mesh.bboxMin[2]));
+        corners[1] = robj[i]->transform.apply( glm::vec3(mesh.bboxMin[0], mesh.bboxMax[1], mesh.bboxMax[2]));
+        corners[2] = robj[i]->transform.apply( glm::vec3(mesh.bboxMax[0], mesh.bboxMax[1], mesh.bboxMax[2]));
+        corners[3] = robj[i]->transform.apply( glm::vec3(mesh.bboxMax[0], mesh.bboxMax[1], mesh.bboxMin[2]));
+        corners[4] = robj[i]->transform.apply( glm::vec3(mesh.bboxMax[0], mesh.bboxMin[1], mesh.bboxMin[2]));
+        corners[5] = robj[i]->transform.apply( glm::vec3(mesh.bboxMax[0], mesh.bboxMin[1], mesh.bboxMax[2]));
+        corners[6] = robj[i]->transform.apply( glm::vec3(mesh.bboxMin[0], mesh.bboxMin[1], mesh.bboxMax[2]));
+        corners[7] = robj[i]->transform.apply( glm::vec3(mesh.bboxMin[0], mesh.bboxMin[1], mesh.bboxMin[2]));
+
+        for(int i = 0; i < 8; i++) {
+            min = glm::min(min, corners[i]);
+            max = glm::max(max, corners[i]);
+        }
+
     }
 
     glCreateBuffers(4, bufferObjects);

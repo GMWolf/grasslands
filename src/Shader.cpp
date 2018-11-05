@@ -87,6 +87,12 @@ Shader &Shader::operator=(Shader &&other) noexcept {
 //region uniform specializations
 
 template<>
+void Shader::setUniform(GLint location, const bool &value) {
+    glProgramUniform1i(program, location, value);
+}
+
+
+template<>
 void Shader::setUniform(GLint location, const int &value) {
     glProgramUniform1i(program, location, value);
 }

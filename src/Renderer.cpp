@@ -245,7 +245,40 @@ void Renderer::renderBatch(Batch &batch) {
 }
 
 void Renderer::renderBatch(StaticBatch &batch) {
-    renderBatch(static_cast<Batch&>(batch));
+
+    glm::mat4 viewproj = proj * view;
+
+    glm::vec4 corners[8];
+    corners[0] = viewproj * glm::vec4(batch.min[0], batch.max[1], batch.min[2], 1.f);
+    corners[1] = viewproj * glm::vec4(batch.min[0], batch.max[1], batch.max[2], 1.f);
+    corners[2] = viewproj * glm::vec4(batch.max[0], batch.max[1], batch.max[2], 1.f);
+    corners[3] = viewproj * glm::vec4(batch.max[0], batch.max[1], batch.min[2], 1.f);
+    corners[4] = viewproj * glm::vec4(batch.max[0], batch.min[1], batch.min[2], 1.f);
+    corners[5] = viewproj * glm::vec4(batch.max[0], batch.min[1], batch.max[2], 1.f);
+    corners[6] = viewproj * glm::vec4(batch.min[0], batch.min[1], batch.max[2], 1.f);
+    corners[7] = viewproj * glm::vec4(batch.min[0], batch.min[1], batch.min[2], 1.f);
+
+    glm::bvec3 allGt(true);
+    glm::bvec3 allLt(true);
+    for(int i = 0; i < 8; i++) {
+        glm::bvec3 gt = glm::greaterThan(glm::vec3(corners[i]), glm::vec3(corners[i].w));
+        glm::bvec3 lt = glm::lessThan(glm::vec3(corners[i]), -glm::vec3(corners[i].w));
+
+        allGt &= gt;
+        allLt &= lt;
+    }
+
+    bool inside = !(any(allGt) || any(allLt));
+
+    bool fullInside = (!all(allGt)) && (!all(allLt));
+
+    dispatchCompute->setUniform(1, !fullInside);
+
+
+    if(inside) {
+        renderBatch(static_cast<Batch&>(batch));
+    }
+
 }
 
 void Renderer::renderBatch(DynamicBatch &batch) {
@@ -279,39 +312,52 @@ void Renderer::renderBatch(DynamicBatch &batch) {
 
 void Renderer::addObjects(std::vector<RenderObject *> &renderObjects) {
 
-    std::map<baseMaterialType*, std::unique_ptr<std::vector<RenderObject*>>> staticObjects;
+    std::map<baseMaterialType*, std::unique_ptr<Octree>> staticObjects;
     std::map<baseMaterialType*, std::unique_ptr<std::vector<RenderObject*>>> dynamicObjects;
 
     for(auto o : renderObjects) {
         baseMaterialType* matType = o->mat.type;
-        auto& group = o->isStatic ? staticObjects : dynamicObjects;
 
-        if (group.find(matType) == group.end()) {
-            group[matType] = std::make_unique<std::vector<RenderObject*>>();
-        }
+        if(o->isStatic) {
+            if (staticObjects.find(matType) == staticObjects.end()) {
+                staticObjects[matType] = std::make_unique<Octree>(100);
+            }
+            staticObjects[matType]->root.insert(o);
+        } else {
+            if (dynamicObjects.find(matType) == dynamicObjects.end()) {
+                dynamicObjects[matType] = std::make_unique<std::vector<RenderObject*>>();
+            }
+            auto& vec = *dynamicObjects[matType];
+            vec.emplace_back(o);
 
-        auto& vec = *group[matType];
-        vec.emplace_back(o);
-
-        if(vec.size() >= MAX_BATCH_SIZE) {
-            if (o->isStatic) {
-                staticBatches.emplace_back(vec);
-                vec.clear();
-            } else {
-                dynamicBatches.emplace_back(vec);
-                vec.clear();
+            if(vec.size() >= MAX_BATCH_SIZE) {
+               dynamicBatches.emplace_back(vec);
+               vec.clear();
             }
         }
-
     }
+
 
     for(auto& e : staticObjects) {
-        staticBatches.emplace_back(*e.second);
-        e.second->clear();
+        addOctreeNodes(e.second->root);
     }
+
     for(auto& e : dynamicObjects) {
         dynamicBatches.emplace_back(*e.second);
         e.second->clear();
+    }
+}
+
+void Renderer::addOctreeNodes(OctreeNode & node) {
+
+    if (node.nodes) {
+        for(int i = 0; i < 8; i++) {
+            addOctreeNodes(node.nodes[i]);
+        }
+    } else {
+        if(node.renderObjects.size() > 0) {
+            staticBatches.emplace_back(node.renderObjects);
+        }
     }
 
 }

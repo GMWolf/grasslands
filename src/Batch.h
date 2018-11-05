@@ -42,6 +42,7 @@ struct Batch {
 
 struct StaticBatch : public Batch {
     explicit StaticBatch(std::vector<RenderObject*>& robj);
+    glm::vec3 min, max;
 };
 
 struct DynamicBatch : public Batch {

@@ -34,7 +34,7 @@ struct OctreeNode {
 class Octree {
 
 public:
-    Octree(float halfSize) : root(glm::vec3(0,0,0), halfSize, 2048){
+    Octree(float halfSize) : root(glm::vec3(0,0,0), halfSize, MAX_BATCH_SIZE){
     }
 
     OctreeNode root;

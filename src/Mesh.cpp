@@ -81,10 +81,8 @@ Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertices, const std::vec
     nextBaseVertex += vertices.size();
 
     //Calculate bounding box
-    const float inf = std::numeric_limits<float>::infinity();
-    const float ninf = -inf;
-    glm::vec3 bboxMax = glm::vec3(ninf, ninf, ninf);
-    glm::vec3 bboxMin = glm::vec3(inf, inf, inf);
+    auto bboxMax = glm::vec3(std::numeric_limits<float>::min());
+    auto bboxMin = glm::vec3(std::numeric_limits<float>::max());
     //Calculate bboxN
     for(const vertexData& v : vertices) {
         glm::vec3 pos = v.position;
