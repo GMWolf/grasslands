@@ -17,6 +17,10 @@ void Texture::setCompressedData(GLint level, GLenum format, GLint x, GLint y, GL
     glCompressedTextureSubImage3D(textureArray->texture, level, x, y, layer,width, height, 1, format, size, data);
 }
 
+Texture::operator glm::ivec2() const{
+    return {textureArray->unit, layer};
+}
+
 TextureArray::TextureArray(GLuint unit, GLsizei mipmaplevels, GLenum format, GLsizei width, GLsizei height, GLsizei layercount)
     : unit(unit), width(width), height(height), nextLayer(0) {
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture);
@@ -41,7 +45,7 @@ Texture TextureArray::getTexture() {
 }
 
 void TextureArray::bind() {
-    std::cout << unit << std::endl;
+    //std::cout << unit << std::endl;
     glBindTextureUnit(unit, texture);
 }
 

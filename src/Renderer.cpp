@@ -226,8 +226,8 @@ void Renderer::renderBatch(Batch &batch) {
     //render indirect
     Shader* shader = batch.matType.shader;
     shader->use();
-    static const std::vector<unsigned int> tsamplers {
-            0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u
+    static const std::vector<int> tsamplers {
+            0, 1, 2, 3, 4, 5, 6, 7
     };
     shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
     shader->setUniform(shader->getUniformLocation("projection"), proj);

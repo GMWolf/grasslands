@@ -11,14 +11,13 @@
 
 struct OctreeNode {
 
-    OctreeNode() = default;;
+    OctreeNode() = default;
     OctreeNode(glm::vec3 center, float halfSize, int maxItems);
 
 
     void insert(RenderObject* renderObject);
 
     bool contains(RenderObject* robj);
-
 
     OctreeNode* nodes = nullptr;
 

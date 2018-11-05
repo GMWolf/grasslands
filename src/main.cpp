@@ -43,10 +43,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 struct GrassMatData {
-    GLuint albedoLayer;
-    GLuint normalLayer;
-    GLuint roughAlphaLayer;
-    GLuint translucencyLayer;
+    glm::ivec2 albedoTex;
+    glm::ivec2 normalTex;
+    glm::ivec2 roughAlphaTex;
+    glm::ivec2 translucencyTex;
 };
 
 int main() {
@@ -98,6 +98,8 @@ int main() {
     Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
     Mesh grass = ObjLoader::load(meshBuffer, "../grass.obj");
+    Mesh grassA = ObjLoader::load(meshBuffer, "../models/grassA.obj");
+    Mesh thistle = ObjLoader::load(meshBuffer, "../models/thistle.obj");
     Mesh cube = ObjLoader::load(meshBuffer, "../cube.obj");
     Mesh quad = ObjLoader::load(meshBuffer, "../quad.obj");
 
@@ -164,7 +166,6 @@ int main() {
     };
 
 
-
     std::ifstream grass_vertFile("../shaders/grassVertex.glsl");
     std::string grass_vertText((std::istreambuf_iterator<char>(grass_vertFile)), (std::istreambuf_iterator<char>()));
     std::ifstream grass_fragFile("../shaders/grassFragment.glsl");
@@ -185,9 +186,15 @@ int main() {
     Texture weed11RA     = loadDDS(group, "../textures/Weed11/Weed_Various11_RA.DDS");
     Texture weed11Tr     = loadDDS(group, "../textures/Weed11/Weed_Various11_translucency.DDS");
 
+    Texture thistle17Albedo = loadDDS(group, "../textures/SnowThistle/Weed_Thistle17_albedo.DDS");
+    Texture thistle17Normal = loadDDS(group, "../textures/SnowThistle/Weed_Thistle17_normal.DDS");
+    Texture thistle17RA     = loadDDS(group, "../textures/SnowThistle/Weed_Thistle17_RA.DDS");
+    Texture thistle17Tr     = loadDDS(group, "../textures/SnowThistle/Weed_Thistle17_translucency.DDS");
+
     MaterialType<GrassMatData> grassType(grassShader, 10);
-    Material matGrass12 = grassType.addMaterial({grass12Albedo.layer, grass12Normal.layer, grass12RA.layer, grass12Tr.layer});
-    Material matWeed11  = grassType.addMaterial({weed11Albedo.layer, weed11Normal.layer, weed11RA.layer, weed11Tr.layer});
+    Material matGrass12 = grassType.addMaterial({grass12Albedo, grass12Normal, grass12RA, grass12Tr});
+    Material matWeed11  = grassType.addMaterial({weed11Albedo, weed11Normal, weed11RA, weed11Tr});
+    Material matThistle = grassType.addMaterial({thistle17Albedo, thistle17Normal, thistle17RA, thistle17Tr});
 
     Renderer renderer;
     Camera camera;
@@ -220,23 +227,51 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 50000; i++) {
+    for(int i = 0; i < 30000; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
-        float clumpScale = (rand() / (float)RAND_MAX) * 0.6f + 0.4f;
+        float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 0.5f;
 
         for(int j = 0; j < 5; j++) {
             glm::vec2 subpos2D = pos2D + glm::diskRand(1.f);
             t.scale = clumpScale + (rand() / (float)RAND_MAX) * 0.1f - 0.05f;
             t.pos = glm::vec3(subpos2D.x, 0, subpos2D.y);
             t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
-            objects.emplace_back(grass, matGrass12, t, true);
+            objects.emplace_back(grassA, matGrass12, t, true);
+        }
+    }
+
+    for(int i = 0; i < 1000; i++) {
+        Transform t{};
+        glm::vec2 pos2D = glm::diskRand(100.f);
+        float clumpScale = (rand() / (float)RAND_MAX) * 0.4f + 0.6f;
+
+        for(int j = 0; j < 5; j++) {
+            glm::vec2 subpos2D = pos2D + glm::diskRand(1.f);
+            t.scale = clumpScale + (rand() / (float)RAND_MAX) * 0.1f - 0.05f;
+            t.pos = glm::vec3(subpos2D.x, 0, subpos2D.y);
+            t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
+            objects.emplace_back(grass, matWeed11, t, true);
+        }
+    }
+
+    for(int i = 0; i < 50000; i++) {
+        Transform t{};
+        glm::vec2 pos2D = glm::diskRand(100.f);
+        float clumpScale = (rand() / (float)RAND_MAX) * 0.2f + 0.3f;
+
+        for(int j = 0; j < 5; j++) {
+            glm::vec2 subpos2D = pos2D + glm::diskRand(1.f);
+            t.scale = clumpScale + (rand() / (float)RAND_MAX) * 0.1f - 0.05f;
+            t.pos = glm::vec3(subpos2D.x, 0, subpos2D.y);
+            t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
+            objects.emplace_back(thistle, matThistle, t, true);
         }
     }
 
 
 
-    for(int i = 0; i < 60; i++) {
+    for(int i = 0; i < 150; i++) {
 
         Transform t{};
 
@@ -268,6 +303,7 @@ int main() {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         float ratio = width / (float) height;
+        glViewport(0, 0, width, height);
 
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 10000.f);

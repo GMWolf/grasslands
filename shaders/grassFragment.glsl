@@ -3,10 +3,10 @@
 #define PI 3.1415926535897932384626433832795
 
 struct material {
-    uint albedo;
-    uint normal;
-    uint roughAlpha;
-    uint translucency;
+    ivec2 albedo;
+    ivec2 normal;
+    ivec2 roughAlpha;
+    ivec2 translucency;
 };
 
 
@@ -94,28 +94,31 @@ vec3 fresnel(float cosTheta, vec3 F0) {
 }
 
 
+vec4 matTexture(ivec2 t, vec2 texcoord) {
+    return texture(tex[t.x], vec3(texcoord, t.y));
+}
+
+
 void main()
 {
 
     material mat = materials[materialIndex[IN.drawID]];
-    vec3 RA = texture(tex[1], vec3(IN.texcoord, mat.roughAlpha)).xyz;
+    vec3 RA = matTexture(mat.roughAlpha, IN.texcoord).xyz;
 
-    float roughness = RA.x;
-    float Alpha = RA.y;
+    float roughness = RA.r;
+    float Alpha = RA.g;
 
     if (Alpha < 0.45) {
         discard;
     }
-   /* if (Alpha < 0.45) {
-        discard;
-    }
-*/
-    //outColor.a = Alpha;
 
-    vec3 albedo = texture(tex[1], vec3(IN.texcoord, mat.albedo)).xyz;
+    vec3 albedo = matTexture(mat.albedo, IN.texcoord).xyz;
+    float albedoSize = length(albedo);
+    albedo.r += mix(-0.05, 0.05, IN.drawID / 8000.f);
+    albedo = normalize(albedo) * albedoSize;
 
     vec3 N = normalize(IN.normal);
-    vec3 normalMap = normalize(texture(tex[1], vec3(IN.texcoord, mat.normal)).xyz * 2.0 - 1.0);
+    vec3 normalMap = normalize(matTexture(mat.normal, IN.texcoord).xyz * 2.0 - 1.0);
     normalMap *= vec3(1,-1,1);
 
     N = perturb_normal(N, IN.viewVector, IN.texcoord, normalMap);
@@ -145,27 +148,29 @@ void main()
 
     float NdotL = max(dot(N, L), 0.0);
 
-    vec3 radiance = vec3(4.0, 4.0, 4.0);
+    vec3 radiance = vec3(4.0, 4.0, 3.0);
     vec3 light = (kD * albedo / PI + specular)  * radiance  * NdotL;
 
     vec3 ambient = vec3(0.15) * albedo;
 
     //translucency
-    vec3 translucency = texture(tex[1], vec3(IN.texcoord, mat.translucency)).xyz;
+    vec3 translucency = matTexture(mat.translucency, IN.texcoord).xyz;
     float NdotLI = min(max(dot(-N, L), 0), 1);
     /*float GI = G_smith(-N, V, L, roughness);
     vec3 transmit = (translucency * radiance) * GI;*/
     /*float VdotL = max(dot(normalize(IN.viewVector), -L), 0);
     vec3 transmit = VdotL * translucency;*/
 
-    float EdotL = min(max(dot(normalize(IN.viewVector), -L), 0), 1);
+    float EdotL = min(max(dot(normalize(IN.viewVector), -L), 0.5), 1);
 
-    vec3 transmit = (EdotL * NdotLI + ambient) * translucency * radiance * albedo;
+    vec3 transmit = (EdotL * NdotLI + ambient) * translucency * radiance * albedo ;
 
     //outColor = vec4(transmit, 1.0);
 
     outColor = vec4(light + transmit + ambient, Alpha);
 
+    //outColor = vec4(albedo, 1.0);
+    //outColor = vec4(1.0, 0.0, 0.0, 1.0);
 
     //outColor = vec4(albedo, 1.0);
 }

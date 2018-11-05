@@ -10,6 +10,7 @@
 #include <tuple>
 #include <memory>
 #include <vector>
+#include "glm.hpp"
 
 class TextureArray;
 class Texture {
@@ -21,6 +22,8 @@ public:
 
     void setData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLenum type, const void * pixels);
     void setCompressedData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLsizei size, const void * data);
+
+    operator glm::ivec2() const;
 
 private:
     Texture(TextureArray* textureArray, GLuint layer);

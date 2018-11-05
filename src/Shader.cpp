@@ -116,4 +116,9 @@ void Shader::setUniform(GLint location, const std::vector<unsigned int> &value) 
     glProgramUniform1uiv(program, location, value.size(), value.data());
 }
 
+template<>
+void Shader::setUniform(GLint location, const std::vector<int> &value) {
+    glProgramUniform1iv(program, location, value.size(), value.data());
+}
+
 //endregion

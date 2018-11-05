@@ -2,10 +2,10 @@
 #define PI 3.1415926535897932384626433832795
 
 struct material {
-    uint diffuse;
-    uint normal;
-    uint ram;
-    uint disp;
+    ivec2 diffuse;
+    ivec2 normal;
+    ivec2 ram;
+    ivec2 disp;
 };
 
 
@@ -92,19 +92,21 @@ vec3 fresnel(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0-cosTheta, 5.0);
 }
 
+vec4 matTexture(ivec2 t, vec2 texcoord) {
+    return texture(tex[t.x], vec3(texcoord, t.y));
+}
 
 void main()
 {
-
     material mat = materials[materialIndex[IN.drawID]];
-    vec3 RAM = texture(tex[0], vec3(IN.texcoord, mat.ram)).xyz;
+    vec3 RAM = matTexture(mat.ram, IN.texcoord).xyz;
     float roughness = RAM.x;
     float AO = RAM.y;
     float metalic = RAM.z;
-    vec3 albedo = texture(tex[1], vec3(IN.texcoord, mat.diffuse)).xyz;
+    vec3 albedo = matTexture(mat.diffuse, IN.texcoord).xyz;
 
     vec3 N = normalize(IN.normal);
-    vec3 normalMap = normalize(texture(tex[0], vec3(IN.texcoord, mat.normal)).xyz * 2.0 - 1.0);
+    vec3 normalMap = matTexture(mat.normal, IN.texcoord).xyz * 2.0 - 1.0;
     normalMap *= vec3(1,-1,1);
 
     N = perturb_normal(N, IN.viewVector, IN.texcoord, normalMap);
@@ -136,7 +138,7 @@ void main()
     vec3 radiance = vec3(4.0, 4.0, 4.0);
     vec3 light = (kD * albedo / PI + specular)  * radiance  * NdotL;
 
-    vec3 ambient = vec3(0.03) * albedo * AO;
+    vec3 ambient = vec3(0.15) * albedo * AO;
 
     outColor = vec4(light + ambient, 1.0);
 

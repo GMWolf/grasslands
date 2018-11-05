@@ -5,21 +5,23 @@
 #ifndef GRASSLANDS_MATERIAL_H
 #define GRASSLANDS_MATERIAL_H
 
+#include <vec2.hpp>
 #include "Texture.h"
 #include "Shader.h"
+#include "glm.hpp"
 
 struct MaterialData {
-    MaterialData(GLuint diffuse, GLuint normal, GLuint ram, GLuint disp)
-    : diffuseLayer(diffuse), normalLayer(normal), RAMLayer(ram), dispLayer(disp){
-    }
     MaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp)
-    : MaterialData(diffuse.layer, normal.layer, ram.layer, disp.layer) {
+    : diffuseTex(diffuse),
+      normalTex(normal),
+      RAMTex(ram),
+      dispTex(disp){
     }
 
-    GLuint diffuseLayer;
-    GLuint normalLayer;
-    GLuint RAMLayer;
-    GLuint dispLayer;
+    glm::ivec2 diffuseTex;
+    glm::ivec2 normalTex;
+    glm::ivec2 RAMTex;
+    glm::ivec2 dispTex;
 };
 
 

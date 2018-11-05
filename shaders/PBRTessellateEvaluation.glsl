@@ -20,10 +20,10 @@ out Vertex {
 } OUT;
 
 struct material {
-    uint diffuse;
-    uint normal;
-    uint ram;
-    uint disp;
+    ivec2 diffuse;
+    ivec2 normal;
+    ivec2 ram;
+    ivec2 disp;
 };
 
 
@@ -47,11 +47,20 @@ layout(std430, binding = 2) buffer MaterialDataBuffer {
     material materials[];
 };
 
-uniform sampler2DArray tex;
+uniform sampler2DArray tex[8];
 
 uniform mat4 MV;
 
 uniform vec3 eyePos;
+
+
+vec4 matTexture(ivec2 t, vec2 texcoord) {
+    return texture(tex[t.x], vec3(texcoord, t.y));
+}
+
+vec4 matTextureLod(ivec2 t, vec2 texcoord, float lod) {
+    return textureLod(tex[t.x], vec3(texcoord, t.y), lod);
+}
 
 void main() {
 
@@ -89,10 +98,10 @@ void main() {
 
     material mat = materials[materialIndex[IN[0].drawID]];
 
-    float levels = textureQueryLevels(tex);
+    float levels = textureQueryLevels(tex[mat.disp.x]);
     float lodLevel = levels - log2(texSize);
 
-    float d = textureLod(tex, vec3(texcoord, mat.disp), lodLevel).x;
+    float d = matTextureLod(mat.disp, texcoord, lodLevel).x;
     d = (d * 2.0) - 1;
     d *= 0.02 * pinchEdge;
 
