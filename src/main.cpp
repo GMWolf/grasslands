@@ -127,9 +127,9 @@ int main() {
     Texture MetalRAM = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_roughAOMetalic.DDS");
     Texture MetalHeight = loadDDS(group,     "../textures/MetalThreadplate/Metal_ThreadplateBare_height.DDS");
 
-    Texture GroundAlbedo = loadDDS(group, "../textures/groundGrass/grass1-albedo.DDS");
-    Texture GroundNormal = loadDDS(group, "../textures/groundGrass/grass1-normal.DDS");
-    Texture GroundRAM    = loadDDS(group, "../textures/groundGrass/grass1-RAM.DDS");
+    Texture GroundAlbedo = loadDDS(group, "../textures/GroundForest3/GroundForest003_albedo_1.DDS");
+    Texture GroundNormal = loadDDS(group, "../textures/GroundForest3/GroundForest003_normal.DDS");
+    Texture GroundRAM    = loadDDS(group, "../textures/GroundForest3/GroundForest003_RAM.DDS");
 
     std::ifstream pbr_vertFile("../shaders/PBRVertex.glsl");
     std::string pbr_vertexText((std::istreambuf_iterator<char>(pbr_vertFile)), (std::istreambuf_iterator<char>()));
@@ -217,11 +217,11 @@ int main() {
     /*Octree octree(50 * 3);
     std::cout << "built octree" << std::endl;*/
 
-    for(int i = -50; i < 50; i++) {
-        for(int j = -50; j < 50; j++) {
+    for(int i = -100; i < 100; i++) {
+        for(int j = -100; j < 100; j++) {
             Transform t{};
-            t.pos = glm::vec3(i * 4, 0, j * 4);
-            t.scale = 2;
+            t.pos = glm::vec3(i * 2, 0, j * 2);
+            t.scale = 1;
             t.rot = glm::quat();
             objects.emplace_back(quad, matGround, t, true);
         }
@@ -255,7 +255,7 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 100000; i++) {
+    for(int i = 0; i < 10000; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.2f + 0.3f;
