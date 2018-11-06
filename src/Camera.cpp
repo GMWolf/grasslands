@@ -45,3 +45,7 @@ void Camera::update(GLFWwindow* window, float dt) {
 
     view = glm::inverse(glm::translate(glm::mat4(1.0), pos) * look);
 }
+
+Camera::Camera(float ratio, float fov, float near, float far) : nearPlane(near), farPlane(far) {
+    proj = glm::perspective(glm::radians(fov), ratio, near, far);
+}

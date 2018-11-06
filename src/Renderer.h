@@ -49,6 +49,7 @@ public:
     std::vector<DynamicBatch> dynamicBatches;
 
     Shader* dispatchCompute;
+    Shader* defaultDepthShader;
     glm::vec3 eyePos;
 
 private:

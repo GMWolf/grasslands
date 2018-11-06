@@ -19,6 +19,7 @@ layout(std430, binding = 2) buffer MaterialDataBuffer {
 
 uniform sampler2DArray tex[8];
 
+
 in Vertex {
     vec3 normal;
     flat uint drawID;

@@ -197,7 +197,12 @@ int main() {
     Material matThistle = grassType.addMaterial({thistle17Albedo, thistle17Normal, thistle17RA, thistle17Tr});
 
     Renderer renderer;
-    Camera camera;
+
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    float ratio = width / (float) height;
+    glViewport(0, 0, width, height);
+    Camera camera(ratio, 60, 0.1, 500.f);
 
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
@@ -300,16 +305,8 @@ int main() {
         glClearColor(0.7,0.7,0.8,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        float ratio = width / (float) height;
-        glViewport(0, 0, width, height);
-
-        glm::mat4 projection;
-        projection = glm::perspective(glm::radians(60.0f), ratio, 0.1f, 10000.f);
-
         camera.update(window, dt);
-        renderer.setProjection(projection);
+        renderer.setProjection(camera.proj);
         renderer.setView(camera.view);
         renderer.setEyePos(camera.pos);
 

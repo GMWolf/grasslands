@@ -47,6 +47,7 @@ private:
     GLenum primType;
     GLuint nextID = 0;
     Shader* shader;
+    Shader* depthShaderOverride = nullptr;
     GLuint buffer = 0;
     const size_t dataSize;
     const uint32_t  count;

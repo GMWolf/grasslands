@@ -13,7 +13,7 @@ class Camera {
 
 
 public:
-
+    Camera(float ratio, float fov, float near, float far);
 
 
     void update(GLFWwindow* window, float dt);
@@ -34,7 +34,9 @@ public:
     glm::mat4 look = glm::mat4(1);
 
     glm::mat4 view;
+    glm::mat4 proj;
 
+    float nearPlane, farPlane;
 };
 
 
