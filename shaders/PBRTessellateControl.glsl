@@ -21,7 +21,7 @@ out VertexIn {
         float texSize;
 } OUT[];
 
-uniform float tessFactor = 64.0;
+uniform float tessFactor = 32.0;
 
 uniform mat4 MV;
 uniform mat4 projection;
