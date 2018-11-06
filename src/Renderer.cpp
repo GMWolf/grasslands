@@ -7,7 +7,7 @@
 #include "Material.h"
 
 
-Renderer::Renderer() {
+Renderer::Renderer(int width, int height) : width(width), height(height) {
 
     std::ifstream dispatchFile("../shaders/dispatchGeom.glsl");
     std::string dispatchText((std::istreambuf_iterator<char>(dispatchFile)), (std::istreambuf_iterator<char>()));
@@ -19,19 +19,21 @@ Renderer::Renderer() {
 
     std::ifstream depthVertFile("../shaders/depthVert.glsl");
     std::string depthVertText((std::istreambuf_iterator<char>(depthVertFile)), (std::istreambuf_iterator<char>()));
+
+    std::ifstream depthFragFile("../shaders/depthFragment.glsl");
+    std::string depthFragText((std::istreambuf_iterator<char>(depthFragFile)), (std::istreambuf_iterator<char>()));
     defaultDepthShader = new Shader({
-        {GL_VERTEX_SHADER, depthVertText}
+        {GL_VERTEX_SHADER, depthVertText},
+        {GL_FRAGMENT_SHADER, depthFragText}
     });
 
 }
 
 void Renderer::setView(const glm::mat4 &v) {
-    dispatchCompute->setUniform(0, proj * v);
     view = v;
 }
 
 void Renderer::setProjection(const glm::mat4 &p) {
-    dispatchCompute->setUniform(0, p * view);
     proj = p;
 }
 
@@ -40,7 +42,14 @@ void Renderer::setEyePos(const glm::vec3 &pos) {
 }
 
 void Renderer::renderBatch(Batch &batch) {
+
     dispatchCompute->use();
+
+    if(shadowPass) {
+        dispatchCompute->setUniform(1, false);
+    } else {
+        dispatchCompute->setUniform(0, proj * view);
+    }
 
     //GPU Culling
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.meshBuffer.meshDataBuffer);
@@ -53,27 +62,53 @@ void Renderer::renderBatch(Batch &batch) {
     glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
     //render indirect
-    Shader* shader = batch.matType.shader;
+    Shader* shader;
+    if (shadowPass) {
+        shader = batch.matType.depthShaderOverride ? batch.matType.depthShaderOverride : defaultDepthShader;
+    } else {
+        shader = batch.matType.shader;
+    }
     shader->use();
     static const std::vector<int> tsamplers {
             0, 1, 2, 3, 4, 5, 6, 7
     };
-    shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
-    shader->setUniform(shader->getUniformLocation("projection"), proj);
-    shader->setUniform(shader->getUniformLocation("MV"), proj * view);
-    shader->setUniform(shader->getUniformLocation("eyePos"), eyePos);
+
+    if(shadowPass) {
+        shader->setUniform(shader->getUniformLocation("MV"), shadowMap.projection * shadowMap.view);
+    } else {
+        shader->setUniform(shader->getUniformLocation("projection"), proj);
+        shader->setUniform(shader->getUniformLocation("MV"), proj * view);
+        shader->setUniform(shader->getUniformLocation("eyePos"), eyePos);
+        shader->setUniform(shader->getUniformLocation("lightColour"), glm::vec3(4, 4, 3.25));
+        shader->setUniform(shader->getUniformLocation("lightDir"), glm::vec3(1, 1, 0));
+        shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
+        glBindTextureUnit(9, shadowMap.tex);
+        shader->setUniform(shader->getUniformLocation("shadowMap"), 9);
+        shader->setUniform(shader->getUniformLocation("shadowVP"),shadowMap.projection * shadowMap.view);
+    }
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
+    if(!shadowPass) {
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
+    }
+    GLenum prim = shadowPass ? GL_TRIANGLES : batch.matType.primType;
 
-    glMultiDrawElementsIndirect(batch.matType.primType, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
+    glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
 }
 
 void Renderer::renderBatch(StaticBatch &batch) {
+    renderBatch(static_cast<Batch&>(batch));
+    return;
 
-    glm::mat4 viewproj = proj * view;
+    glm::mat4 viewproj;
+    if(shadowPass) {
+        viewproj = shadowMap.projection * shadowMap.view;
+
+    } else {
+        viewproj = proj * view;
+    }
 
     glm::vec4 corners[8];
     corners[0] = viewproj * glm::vec4(batch.min[0], batch.max[1], batch.min[2], 1.f);
@@ -187,4 +222,46 @@ void Renderer::addOctreeNodes(OctreeNode & node) {
         }
     }
 
+}
+
+void Renderer::render() {
+
+    shadowPass = true;
+    //glNamedFramebufferRenderbuffer(shadowMap.fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, )
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.fbo);
+    glClearColor(0, 0, 0, 0.0);
+    glClearDepth(1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport ( 0 , 0 , 2048 , 2048 );
+
+    for(auto &batch : dynamicBatches) {
+        renderBatch(batch);
+    }
+    for(auto &batch : staticBatches) {
+        renderBatch(batch);
+    }
+    shadowPass = false;
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+
+    float ratio = width / (float) height;
+    glViewport(0, 0, width, height);
+
+    //Normal color pass
+    shadowPass = false;
+    for(auto &batch : dynamicBatches) {
+        renderBatch(batch);
+    }
+    for(auto &batch : staticBatches) {
+        renderBatch(batch);
+    }
+
+
+
+//    glBlitNamedFramebuffer(shadowMap.fbo, 0, 0, 0, 2048, 2048, 0, 0, 128, 128, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    /*glBindFramebuffer(GL_READ_FRAMEBUFFER, shadowMap.fbo);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glBlitFramebuffer(0, 0, 2048, 2048, 0, 0, 128, 128, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);*/
 }

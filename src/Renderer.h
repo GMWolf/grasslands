@@ -19,17 +19,19 @@
 #include <deque>
 #include "Batch.h"
 #include <map>
+#include "ShadowMap.h"
 
 class Renderer {
 
 public:
 
-    Renderer();
+    Renderer(int width, int height);
 
     void setProjection(const glm::mat4& proj);
     void setView(const glm::mat4& view);
     void setEyePos(const glm::vec3& pos);
 
+    void render();
 
     void renderBatch(Batch& batch);
     void renderBatch(StaticBatch& batch);
@@ -52,8 +54,13 @@ public:
     Shader* defaultDepthShader;
     glm::vec3 eyePos;
 
+    ShadowMap shadowMap;
 private:
     void addOctreeNodes(OctreeNode& node);
+
+    int width, height;
+
+    bool shadowPass = false;
 };
 
 

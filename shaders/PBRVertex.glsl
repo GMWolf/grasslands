@@ -26,6 +26,7 @@ out Vertex {
     flat uint drawID;
     vec2 texcoord;
     vec3 viewVector;
+    noperspective vec3 worldPos;
 } OUT;
 
 vec3 rotate(vec3 vec, vec4 quat) {
@@ -44,4 +45,5 @@ void main()
     OUT.normal = rotate(normal, t.rot);
     OUT.texcoord = texcoord;
     OUT.viewVector = eyePos - pos;
+    OUT.worldPos = pos;
 }

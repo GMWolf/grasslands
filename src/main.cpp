@@ -87,8 +87,8 @@ int main() {
     glfwSwapInterval(0);
 
     // During init, enable debug output
-    glEnable(GL_DEBUG_OUTPUT);
-    //glDebugMessageCallback(MessageCallback, 0);
+   // glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(MessageCallback, 0);
 
     MeshBuffer meshBuffer;
     TextureGroup group;
@@ -156,7 +156,7 @@ int main() {
     MaterialType<MaterialData> pbrType(pbrShader,10);
     MaterialType<MaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
     Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM, RockHeight));
-    Material mat2 = pbrTessType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
+    Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
     Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight));
     Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM, MetalHeight));
     Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM, GroundAlbedo));
@@ -196,12 +196,14 @@ int main() {
     Material matWeed11  = grassType.addMaterial({weed11Albedo, weed11Normal, weed11RA, weed11Tr});
     Material matThistle = grassType.addMaterial({thistle17Albedo, thistle17Normal, thistle17RA, thistle17Tr});
 
-    Renderer renderer;
-
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     float ratio = width / (float) height;
     glViewport(0, 0, width, height);
+
+    Renderer renderer(width, height);
+
+
     Camera camera(ratio, 60, 0.1, 500.f);
 
     glDepthMask(GL_TRUE);
@@ -219,8 +221,6 @@ int main() {
     srand(10);
 
 
-    /*Octree octree(50 * 3);
-    std::cout << "built octree" << std::endl;*/
 
     for(int i = -100; i < 100; i++) {
         for(int j = -100; j < 100; j++) {
@@ -232,7 +232,7 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 30000; i++) {
+   /* for(int i = 0; i < 30000; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 0.5f;
@@ -272,20 +272,20 @@ int main() {
             t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
             objects.emplace_back(thistle, matThistle, t, true);
         }
-    }
+    }*/
 
 
 
-    for(int i = 0; i < 150; i++) {
+    for(int i = 0; i < 5; i++) {
 
         Transform t{};
 
-        glm::vec2 pos2D = glm::diskRand(100.f);
+        glm::vec2 pos2D = glm::diskRand(50.f);
         t.pos = glm::vec3(pos2D.x, 5, pos2D.y);
         t.rot = glm::quat(glm::vec3(0, (rand() / RAND_MAX) * 2 * 3.14159, 0));
         t.scale = 5;
 
-        objects.emplace_back(meshes[rand() % 4], materials[rand() % 4], t, true);
+        objects.emplace_back(meshes[rand() % 4], materials[rand() % 4], t);
     }
 
     for(auto& o : objects) {
@@ -309,6 +309,7 @@ int main() {
         renderer.setProjection(camera.proj);
         renderer.setView(camera.view);
         renderer.setEyePos(camera.pos);
+        renderer.shadowMap.computeProjections(camera, glm::vec3(1, 1, 0));
 
         meshBuffer.bindVa();
         group.bind();
@@ -317,16 +318,9 @@ int main() {
           //  o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
-        renderer.numObject = 0;
-        //renderer.submit(bvh);
-        for(auto &batch : renderer.dynamicBatches) {
-            renderer.renderBatch(batch);
-        }
-        for(auto &batch : renderer.staticBatches) {
-            renderer.renderBatch(batch);
-        }
 
-        renderer.numObject = 0;
+        //renderer.submit(bvh);
+        renderer.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

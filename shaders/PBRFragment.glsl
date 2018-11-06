@@ -18,13 +18,19 @@ layout(std430, binding = 2) buffer MaterialDataBuffer {
 };
 
 uniform sampler2DArray tex[8];
+uniform sampler2D shadowMap;
 
+uniform vec3 lightDir;
+uniform vec3 lightColour;
+
+uniform mat4 shadowVP;
 
 in Vertex {
     vec3 normal;
     flat uint drawID;
     vec2 texcoord;
     vec3 viewVector;
+    noperspective vec3 worldPos;
 } IN;
 
 out vec4 outColor;
@@ -114,7 +120,7 @@ void main()
 
     vec3 V = normalize(IN.viewVector);
 
-    vec3 L = normalize(vec3(0, 1, 1));
+    vec3 L = normalize(lightDir);
 
     vec3 H = normalize(L + V);
 
@@ -136,13 +142,25 @@ void main()
 
     float NdotL = max(dot(N, L), 0.0);
 
-    vec3 radiance = vec3(4.0, 4.0, 4.0);
+    vec3 radiance = lightColour;
     vec3 light = (kD * albedo / PI + specular)  * radiance  * NdotL;
 
     vec3 ambient = vec3(0.15) * albedo * AO;
 
+
+    //SHADOWS
+    vec4 shadowCoord = (shadowVP * vec4(IN.worldPos, 1.0));
+    shadowCoord.xy /= shadowCoord.w;
+    shadowCoord.xy = (shadowCoord.xy + 1) / 2.0f;
+
+    float shadowDist = texture(shadowMap, shadowCoord.xy).x;
+
+    if (shadowCoord.z - 0.1 > shadowDist) {
+        light *= 0.5;
+    }
+
     outColor = vec4(light + ambient, 1.0);
-
-
+    //outColor = vec4(vec3(shadowDist)/ 200.0f, 1.0) ;
+    //outColor = vec4(shadowCoord.xy, 0.0, 1.0);
     //outColor = vec4(albedo, 1.0);
 }

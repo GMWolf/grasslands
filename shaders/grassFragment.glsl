@@ -20,6 +20,9 @@ layout(std430, binding = 2) buffer MaterialDataBuffer {
 
 uniform sampler2DArray tex[8];
 
+uniform vec3 lightDir;
+uniform vec3 lightColour;
+
 in Vertex {
     vec3 normal;
     flat uint drawID;
@@ -125,7 +128,7 @@ void main()
 
     vec3 V = normalize(IN.viewVector);
 
-    vec3 L = normalize(vec3(0, 1, 1));
+    vec3 L = normalize(lightDir);
 
     vec3 H = normalize(L + V);
 
@@ -148,7 +151,7 @@ void main()
 
     float NdotL = max(dot(N, L), 0.0);
 
-    vec3 radiance = vec3(4.0, 4.0, 3.0);
+    vec3 radiance = lightColour;
     vec3 light = (kD * albedo / PI + specular)  * radiance  * NdotL;
 
     vec3 ambient = vec3(0.15) * albedo;
@@ -161,7 +164,7 @@ void main()
     /*float VdotL = max(dot(normalize(IN.viewVector), -L), 0);
     vec3 transmit = VdotL * translucency;*/
 
-    float EdotL = min(max(dot(normalize(IN.viewVector), -L), 0.5), 1);
+    float EdotL = min(max(dot(normalize(IN.viewVector), -L), 0.4), 1);
 
     vec3 transmit = (EdotL * NdotLI + ambient) * translucency * radiance * albedo ;
 

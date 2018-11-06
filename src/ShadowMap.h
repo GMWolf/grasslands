@@ -10,7 +10,7 @@
 #include "Camera.h"
 
 class ShadowMap {
-
+public:
     ShadowMap();
     ~ShadowMap();
 
@@ -19,9 +19,11 @@ class ShadowMap {
     glm::mat4 projection;
     glm::mat4 view;
 
-    GLuint fbo;
     GLuint tex;
+    GLuint dtex;
 
+public:
+    GLuint fbo;
 };
 
 

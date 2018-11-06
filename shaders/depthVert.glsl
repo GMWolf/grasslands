@@ -19,7 +19,8 @@ layout(std430, binding = 0) buffer transformBuffer
 
 
 uniform mat4 MV;
-uniform vec3 eyePos;
+
+noperspective out float depth;
 
 vec3 rotate(vec3 vec, vec4 quat) {
     vec3 t = 2 * cross(quat.xyz, vec);
@@ -32,4 +33,5 @@ void main()
     Transform t = ModelTransform[drawID];
     vec3 pos = (rotate(position, t.rot) * t.scale) + t.pos;
     gl_Position = MV * vec4(pos, 1.0);
+    depth = gl_Position.z;
 }
