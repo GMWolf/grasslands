@@ -83,7 +83,6 @@ Shader &Shader::operator=(Shader &&other) noexcept {
 }
 
 
-
 //region uniform specializations
 
 template<>

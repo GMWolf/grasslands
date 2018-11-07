@@ -20,10 +20,12 @@ layout(std430, binding = 2) buffer MaterialDataBuffer {
 uniform sampler2DArray tex[8];
 uniform sampler2D shadowMap;
 
+uniform mat4 shadowVP;
+
 uniform vec3 lightDir;
 uniform vec3 lightColour;
 
-uniform mat4 shadowVP;
+
 
 in Vertex {
     vec3 normal;
@@ -34,7 +36,6 @@ in Vertex {
 } IN;
 
 out vec4 outColor;
-
 
 // http://www.thetenthplanet.de/archives/1180
 mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)
@@ -103,6 +104,32 @@ vec4 matTexture(ivec2 t, vec2 texcoord) {
     return texture(tex[t.x], vec3(texcoord, t.y));
 }
 
+uniform float u_minVariance = 0.0001;
+//https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch08.html
+float ChebyshecUpperBound(vec2 moments, float t) {
+
+    float p = float(t <= moments.x);
+
+    float variance = moments.y - (moments.x * moments.x);
+    variance = max(variance, u_minVariance);
+    float d = t - moments.x;
+    float p_max = variance / (variance + d*d);
+    return max(p, p_max);
+
+}
+
+float shadowIntensity() {
+    vec4 shadowCoord = (shadowVP * vec4(IN.worldPos /*+ IN.normal * 0.01*/, 1.0));
+    shadowCoord.xy /= shadowCoord.w;
+    shadowCoord.xy = (shadowCoord.xy + 1) / 2.0f;
+    vec4 shadowFrag =  texture(shadowMap, shadowCoord.xy);
+
+    //return int(shadowFrag.x > shadowCoord.z);
+
+    vec2 moments = shadowFrag.xy;
+    return ChebyshecUpperBound(moments, shadowCoord.z);
+}
+
 void main()
 {
     material mat = materials[materialIndex[IN.drawID]];
@@ -148,19 +175,9 @@ void main()
     vec3 ambient = vec3(0.15) * albedo * AO;
 
 
-    //SHADOWS
-    vec4 shadowCoord = (shadowVP * vec4(IN.worldPos, 1.0));
-    shadowCoord.xy /= shadowCoord.w;
-    shadowCoord.xy = (shadowCoord.xy + 1) / 2.0f;
+    light *= shadowIntensity();
 
-    float shadowDist = texture(shadowMap, shadowCoord.xy).x;
 
-    if (shadowCoord.z - 0.1 > shadowDist) {
-        light *= 0.5;
-    }
 
     outColor = vec4(light + ambient, 1.0);
-    //outColor = vec4(vec3(shadowDist)/ 200.0f, 1.0) ;
-    //outColor = vec4(shadowCoord.xy, 0.0, 1.0);
-    //outColor = vec4(albedo, 1.0);
 }

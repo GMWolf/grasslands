@@ -87,8 +87,9 @@ int main() {
     glfwSwapInterval(0);
 
     // During init, enable debug output
-   // glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
+    glEnable(GL_MULTISAMPLE);
 
     MeshBuffer meshBuffer;
     TextureGroup group;
@@ -176,6 +177,12 @@ int main() {
         {GL_FRAGMENT_SHADER, grass_fragText}
     });
 
+    Shader* grassShadowShader = new Shader({
+        {GL_VERTEX_SHADER, "../shaders/grassDepthVert.glsl"_read},
+        {GL_FRAGMENT_SHADER, "../shaders/grassDepthFrag.glsl"_read}
+    });
+
+
     Texture grass12Albedo = loadDDS(group, "../textures/Grass12/Grass12_albedo.DDS");
     Texture grass12Normal = loadDDS(group, "../textures/Grass12/Grass12_normal.DDS");
     Texture grass12RA     = loadDDS(group, "../textures/Grass12/Grass12_roughAlpha.DDS");
@@ -192,6 +199,8 @@ int main() {
     Texture thistle17Tr     = loadDDS(group, "../textures/SnowThistle/Weed_Thistle17_translucency.DDS");
 
     MaterialType<GrassMatData> grassType(grassShader, 10);
+    grassType.depthShaderOverride = grassShadowShader;
+    grassType.castShadow = false;
     Material matGrass12 = grassType.addMaterial({grass12Albedo, grass12Normal, grass12RA, grass12Tr});
     Material matWeed11  = grassType.addMaterial({weed11Albedo, weed11Normal, weed11RA, weed11Tr});
     Material matThistle = grassType.addMaterial({thistle17Albedo, thistle17Normal, thistle17RA, thistle17Tr});
@@ -204,7 +213,7 @@ int main() {
     Renderer renderer(width, height);
 
 
-    Camera camera(ratio, 60, 0.1, 500.f);
+    Camera camera(ratio, 60, 0.1, 200.f);
 
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
@@ -221,18 +230,17 @@ int main() {
     srand(10);
 
 
-
     for(int i = -100; i < 100; i++) {
         for(int j = -100; j < 100; j++) {
             Transform t{};
             t.pos = glm::vec3(i * 2, 0, j * 2);
             t.scale = 1;
             t.rot = glm::quat();
-            objects.emplace_back(quad, matGround, t, true);
+            objects.emplace_back(quad, matGround, t);
         }
     }
 
-   /* for(int i = 0; i < 30000; i++) {
+    for(int i = 0; i < 30000; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 0.5f;
@@ -272,17 +280,17 @@ int main() {
             t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
             objects.emplace_back(thistle, matThistle, t, true);
         }
-    }*/
+    }
 
 
 
-    for(int i = 0; i < 5; i++) {
+    for(int i = 0; i < 15; i++) {
 
         Transform t{};
 
-        glm::vec2 pos2D = glm::diskRand(50.f);
+        glm::vec2 pos2D = glm::diskRand(100.f);
         t.pos = glm::vec3(pos2D.x, 5, pos2D.y);
-        t.rot = glm::quat(glm::vec3(0, (rand() / RAND_MAX) * 2 * 3.14159, 0));
+        t.rot = glm::quat(glm::vec3(0, (rand() / (float)RAND_MAX) * 2 * 3.14159, 0));
         t.scale = 5;
 
         objects.emplace_back(meshes[rand() % 4], materials[rand() % 4], t);
@@ -309,7 +317,7 @@ int main() {
         renderer.setProjection(camera.proj);
         renderer.setView(camera.view);
         renderer.setEyePos(camera.pos);
-        renderer.shadowMap.computeProjections(camera, glm::vec3(1, 1, 0));
+        renderer.shadowMap.computeProjections(camera, glm::normalize(glm::vec3(-1, -1, 0)));
 
         meshBuffer.bindVa();
         group.bind();

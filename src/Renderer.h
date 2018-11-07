@@ -52,6 +52,7 @@ public:
 
     Shader* dispatchCompute;
     Shader* defaultDepthShader;
+
     glm::vec3 eyePos;
 
     ShadowMap shadowMap;
@@ -61,6 +62,8 @@ private:
     int width, height;
 
     bool shadowPass = false;
+
+    Shader* quadShader;
 };
 
 

@@ -27,6 +27,21 @@ Renderer::Renderer(int width, int height) : width(width), height(height) {
         {GL_FRAGMENT_SHADER, depthFragText}
     });
 
+
+
+    std::ifstream quadGFile("../shaders/quadGeom.glsl");
+    std::string quadGText((std::istreambuf_iterator<char>(quadGFile)), (std::istreambuf_iterator<char>()));
+
+    std::ifstream quadFragFile("../shaders/quadFrag.glsl");
+    std::string quadFragText((std::istreambuf_iterator<char>(quadFragFile)), (std::istreambuf_iterator<char>()));
+
+    std::string quadVertText = "#version 120\nvoid main() {\n gl_Position = vec4(0,0,0,0);}";
+
+    quadShader = new Shader({
+        {GL_VERTEX_SHADER, quadVertText},
+        {GL_GEOMETRY_SHADER, quadGText},
+        {GL_FRAGMENT_SHADER, quadFragText}
+    });
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -43,10 +58,14 @@ void Renderer::setEyePos(const glm::vec3 &pos) {
 
 void Renderer::renderBatch(Batch &batch) {
 
+    if(shadowPass && !batch.matType.castShadow) {
+        return;
+    }
+
     dispatchCompute->use();
 
     if(shadowPass) {
-        dispatchCompute->setUniform(1, false);
+        dispatchCompute->setUniform(0, shadowMap.projection * shadowMap.view);
     } else {
         dispatchCompute->setUniform(0, proj * view);
     }
@@ -70,11 +89,12 @@ void Renderer::renderBatch(Batch &batch) {
     }
     shader->use();
     static const std::vector<int> tsamplers {
-            0, 1, 2, 3, 4, 5, 6, 7
+            0, 1//, 2, 3, 4, 5, 6, 7
     };
 
     if(shadowPass) {
         shader->setUniform(shader->getUniformLocation("MV"), shadowMap.projection * shadowMap.view);
+        shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
     } else {
         shader->setUniform(shader->getUniformLocation("projection"), proj);
         shader->setUniform(shader->getUniformLocation("MV"), proj * view);
@@ -89,23 +109,19 @@ void Renderer::renderBatch(Batch &batch) {
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
-    if(!shadowPass) {
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
-    }
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
     GLenum prim = shadowPass ? GL_TRIANGLES : batch.matType.primType;
 
     glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
 }
 
 void Renderer::renderBatch(StaticBatch &batch) {
-    renderBatch(static_cast<Batch&>(batch));
-    return;
+
 
     glm::mat4 viewproj;
     if(shadowPass) {
         viewproj = shadowMap.projection * shadowMap.view;
-
     } else {
         viewproj = proj * view;
     }
@@ -232,7 +248,7 @@ void Renderer::render() {
     glClearColor(0, 0, 0, 0.0);
     glClearDepth(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport ( 0 , 0 , 2048 , 2048 );
+    glViewport ( 0 , 0 , 2048, 2048);
 
     for(auto &batch : dynamicBatches) {
         renderBatch(batch);
@@ -240,6 +256,9 @@ void Renderer::render() {
     for(auto &batch : staticBatches) {
         renderBatch(batch);
     }
+
+
+    glGenerateTextureMipmap(shadowMap.tex);
     shadowPass = false;
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
@@ -257,11 +276,16 @@ void Renderer::render() {
     }
 
 
+    /*quadShader->use();
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glBindTextureUnit(0, shadowMap.tex);
+    quadShader->setUniform(quadShader->getUniformLocation("tex"), 0);
+    glDrawArrays(GL_POINTS, 0, 1);
+    glEnable(GL_CULL_FACE);
 
-//    glBlitNamedFramebuffer(shadowMap.fbo, 0, 0, 0, 2048, 2048, 0, 0, 128, 128, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);*/
 
-    /*glBindFramebuffer(GL_READ_FRAMEBUFFER, shadowMap.fbo);
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glBlitFramebuffer(0, 0, 2048, 2048, 0, 0, 128, 128, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);*/
 }

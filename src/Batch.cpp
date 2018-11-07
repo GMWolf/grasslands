@@ -17,7 +17,7 @@ StaticBatch::StaticBatch(std::vector<RenderObject*> &robj) : Batch(robj.size(), 
     auto * transforms = new Transform[batchSize];
 
     min = glm::vec3(std::numeric_limits<float>::max());
-    max = glm::vec3(std::numeric_limits<float>::min());
+    max = glm::vec3(-std::numeric_limits<float>::max());
 
     for(int i = 0; i < batchSize; i++) {
         commands[i].meshIndex = robj[i]->mesh.index;

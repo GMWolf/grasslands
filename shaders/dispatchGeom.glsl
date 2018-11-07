@@ -130,7 +130,7 @@ void main() {
 
     outputCommands[index].count = m.elementCount;
     if(u_doCull) {
-        outputCommands[index].instanceCount = 1;//uint(OOBBInFrustrum(m.bboxMin, m.bboxmax, transforms[index], u_viewproj));
+        outputCommands[index].instanceCount = uint(OOBBInFrustrum(m.bboxMin, m.bboxmax, transforms[index], u_viewproj));
     } else {
         outputCommands[index].instanceCount = 1;
     }

@@ -10,6 +10,7 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <fstream>
 
 class Shader {
 public:
@@ -48,6 +49,13 @@ private:
     bool compiled;
 
 };
+
+
+inline std::string operator "" _read(const char* p, size_t l) {
+    std::ifstream file(std::string(p, l));
+    std::string text((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
+    return text;
+}
 
 
 #endif //WAGLE2_SHADER_H

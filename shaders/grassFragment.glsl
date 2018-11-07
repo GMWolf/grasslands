@@ -19,6 +19,9 @@ layout(std430, binding = 2) buffer MaterialDataBuffer {
 };
 
 uniform sampler2DArray tex[8];
+uniform sampler2D shadowMap;
+
+uniform mat4 shadowVP;
 
 uniform vec3 lightDir;
 uniform vec3 lightColour;
@@ -28,6 +31,7 @@ in Vertex {
     flat uint drawID;
     vec2 texcoord;
     vec3 viewVector;
+    noperspective vec3 worldPos;
 } IN;
 
 out vec4 outColor;
@@ -101,6 +105,32 @@ vec4 matTexture(ivec2 t, vec2 texcoord) {
     return texture(tex[t.x], vec3(texcoord, t.y));
 }
 
+uniform float u_minVariance = 0.0001;
+//https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch08.html
+float ChebyshecUpperBound(vec2 moments, float t) {
+
+    float p = float(t <= moments.x);
+
+    float variance = moments.y - (moments.x * moments.x);
+    variance = max(variance, u_minVariance);
+    float d = t - moments.x;
+    float p_max = variance / (variance + d*d);
+    return max(p, p_max);
+
+}
+
+float shadowIntensity() {
+
+    vec4 shadowCoord = (shadowVP * vec4(IN.worldPos /*+ IN.normal * 0.01*/, 1.0));
+    shadowCoord.xy /= shadowCoord.w;
+    shadowCoord.xy = (shadowCoord.xy + 1) / 2.0f;
+    vec4 shadowFrag =  texture(shadowMap, shadowCoord.xy);
+
+    //return int(shadowFrag.x > shadowCoord.z);
+
+    vec2 moments = shadowFrag.xy;
+    return ChebyshecUpperBound(moments, shadowCoord.z);
+}
 
 void main()
 {
@@ -169,6 +199,8 @@ void main()
     vec3 transmit = (EdotL * NdotLI + ambient) * translucency * radiance * albedo ;
 
     //outColor = vec4(transmit, 1.0);
+
+    light *= shadowIntensity();
 
     outColor = vec4(light + transmit + ambient, Alpha);
 

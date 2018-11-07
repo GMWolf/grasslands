@@ -43,18 +43,21 @@ public:
 
     Material addMaterial(void* data);
 
+    Shader* depthShaderOverride = nullptr;
+    bool castShadow = true;
 private:
     GLenum primType;
     GLuint nextID = 0;
     Shader* shader;
-    Shader* depthShaderOverride = nullptr;
+
     GLuint buffer = 0;
     const size_t dataSize;
     const uint32_t  count;
+
 };
 
 template<class T, int PRIMITIVE_TYPE = GL_TRIANGLES>
-class MaterialType : baseMaterialType{
+class MaterialType : public baseMaterialType{
 
 public:
     MaterialType(Shader* shader, uint32_t count);
