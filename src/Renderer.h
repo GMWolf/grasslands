@@ -64,6 +64,7 @@ private:
     bool shadowPass = false;
 
     Shader* quadShader;
+    Shader* boxShader;
 };
 
 

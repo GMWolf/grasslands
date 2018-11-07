@@ -22,8 +22,10 @@ public:
     GLuint tex;
     GLuint dtex;
 
-public:
+    GLuint btex;
+
     GLuint fbo;
+    GLuint bfbo;
 };
 
 

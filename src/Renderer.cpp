@@ -42,6 +42,13 @@ Renderer::Renderer(int width, int height) : width(width), height(height) {
         {GL_GEOMETRY_SHADER, quadGText},
         {GL_FRAGMENT_SHADER, quadFragText}
     });
+
+
+    boxShader = new Shader({
+        {GL_VERTEX_SHADER, quadVertText},
+        {GL_GEOMETRY_SHADER, quadGText},
+        {GL_FRAGMENT_SHADER, "../shaders/boxFilterFrag.glsl"_read}
+    });
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -102,7 +109,7 @@ void Renderer::renderBatch(Batch &batch) {
         shader->setUniform(shader->getUniformLocation("lightColour"), glm::vec3(4, 4, 3.25));
         shader->setUniform(shader->getUniformLocation("lightDir"), glm::vec3(1, 1, 0));
         shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
-        glBindTextureUnit(9, shadowMap.tex);
+        glBindTextureUnit(9, shadowMap.btex);
         shader->setUniform(shader->getUniformLocation("shadowMap"), 9);
         shader->setUniform(shader->getUniformLocation("shadowVP"),shadowMap.projection * shadowMap.view);
     }
@@ -257,9 +264,28 @@ void Renderer::render() {
         renderBatch(batch);
     }
 
+    //box filtering
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.bfbo);
+    glClearColor(0, 0, 0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    boxShader->use();
+    boxShader->setUniform(boxShader->getUniformLocation("sampleSize"), glm::vec2(1.f/2048));
+    glBindTextureUnit(0, shadowMap.tex);
+    boxShader->setUniform(boxShader->getUniformLocation("tex"), 0);
 
-    glGenerateTextureMipmap(shadowMap.tex);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDrawArrays(GL_POINTS, 0, 1);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
+
+    glGenerateTextureMipmap(shadowMap.btex);
     shadowPass = false;
+
+
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 

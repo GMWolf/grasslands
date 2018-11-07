@@ -53,6 +53,9 @@ private:
 
 inline std::string operator "" _read(const char* p, size_t l) {
     std::ifstream file(std::string(p, l));
+    if (!file) {
+        throw std::exception();
+    }
     std::string text((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
     return text;
 }

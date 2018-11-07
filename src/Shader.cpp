@@ -112,6 +112,11 @@ void Shader::setUniform(GLint location,  const glm::vec3& value) {
 }
 
 template<>
+void Shader::setUniform(GLint location,  const glm::vec2& value) {
+    glProgramUniform2f(program, location, value.x, value.y);
+}
+
+template<>
 void Shader::setUniform(GLint location, const glm::mat4 &value) {
     glProgramUniformMatrix4fv(program, location, 1, GL_FALSE, value_ptr(value));
 }

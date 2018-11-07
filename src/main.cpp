@@ -143,19 +143,19 @@ int main() {
     std::ifstream pbr_fragFile("../shaders/PBRFragment.glsl");
     std::string pbr_fragText((std::istreambuf_iterator<char>(pbr_fragFile)), (std::istreambuf_iterator<char>()));
 
-    Shader* pbrTesselateShader = new Shader({
+    /*Shader* pbrTesselateShader = new Shader({
         {GL_VERTEX_SHADER, pbrtess_vertexText},
         {GL_TESS_CONTROL_SHADER, pbr_contText},
         {GL_TESS_EVALUATION_SHADER, pbr_evalText},
         {GL_FRAGMENT_SHADER, pbr_fragText}
-    });
+    });*/
     Shader* pbrShader = new Shader({
         {GL_VERTEX_SHADER, pbr_vertexText},
         {GL_FRAGMENT_SHADER, pbr_fragText}
     });
 
     MaterialType<MaterialData> pbrType(pbrShader,10);
-    MaterialType<MaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
+    //MaterialType<MaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
     Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM, RockHeight));
     Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
     Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight));
@@ -213,7 +213,7 @@ int main() {
     Renderer renderer(width, height);
 
 
-    Camera camera(ratio, 60, 0.1, 200.f);
+    Camera camera(ratio, 60, 0.1, 100.f);
 
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
@@ -236,7 +236,7 @@ int main() {
             t.pos = glm::vec3(i * 2, 0, j * 2);
             t.scale = 1;
             t.rot = glm::quat();
-            objects.emplace_back(quad, matGround, t);
+            objects.emplace_back(quad, matGround, t, true);
         }
     }
 
@@ -283,6 +283,7 @@ int main() {
     }
 
 
+    std::vector<RenderObject*> rotateObjects;
 
     for(int i = 0; i < 15; i++) {
 
@@ -294,6 +295,7 @@ int main() {
         t.scale = 5;
 
         objects.emplace_back(meshes[rand() % 4], materials[rand() % 4], t);
+        rotateObjects.push_back(&objects.back());
     }
 
     for(auto& o : objects) {
@@ -322,8 +324,8 @@ int main() {
         meshBuffer.bindVa();
         group.bind();
         //Rotate
-        for(RenderObject& o : objects) {
-          //  o.transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+        for(auto o : rotateObjects) {
+            o->transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
 

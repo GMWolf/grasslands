@@ -119,7 +119,7 @@ float ChebyshecUpperBound(vec2 moments, float t) {
 }
 
 float shadowIntensity() {
-    vec4 shadowCoord = (shadowVP * vec4(IN.worldPos /*+ IN.normal * 0.01*/, 1.0));
+    vec4 shadowCoord = (shadowVP * vec4(IN.worldPos + IN.normal * 0.001, 1.0));
     shadowCoord.xy /= shadowCoord.w;
     shadowCoord.xy = (shadowCoord.xy + 1) / 2.0f;
     vec4 shadowFrag =  texture(shadowMap, shadowCoord.xy);
@@ -172,7 +172,7 @@ void main()
     vec3 radiance = lightColour;
     vec3 light = (kD * albedo / PI + specular)  * radiance  * NdotL;
 
-    vec3 ambient = vec3(0.15) * albedo * AO;
+    vec3 ambient = vec3(0.25) * albedo * AO;
 
 
     light *= shadowIntensity();
