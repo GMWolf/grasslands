@@ -15,6 +15,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     defaultPass.viewportY = 0;
     defaultPass.viewportW = width;
     defaultPass.viewportH = height;
+    defaultPass.clearBuffers = true;
     defaultPass.clearColour = glm::vec4(0.7, 0.7, 0.8, 1.0);
 
 
@@ -263,17 +264,19 @@ void Renderer::render() {
     }
 
 
-    /*glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+    pingPong.swap();
+    glBindFramebuffer(GL_FRAMEBUFFER, pingPong.getFBO());
 
     volumetricShader->setUniform(volumetricShader->getUniformLocation("invMat"), glm::inverse(defaultPass.projection * defaultPass.view));
     volumetricShader->setUniform(volumetricShader->getUniformLocation("eyePos"), eyePos);
     volumetricShader->setUniform(volumetricShader->getUniformLocation("shadowVP"), shadowMap.pass.projection * shadowMap.pass.view);
     glBindTextureUnit(0, shadowMap.btex);
     volumetricShader->setUniform(volumetricShader->getUniformLocation("shadowMap"), 0);
-
-    glEnable(GL_BLEND);
-    glBlendFunc (GL_ONE, GL_ONE);
+    glBindTextureUnit(1, pingPong.getBackTexture());
+    volumetricShader->setUniform(volumetricShader->getUniformLocation("inColour"), 1);
+    glBindTextureUnit(2, pingPong.getBackDepth());
+    volumetricShader->setUniform(volumetricShader->getUniformLocation("depthMap"), 2);
+    volumetricShader->setUniform(volumetricShader->getUniformLocation("size"), glm::vec2(width, height));
 
     volumetricShader->use();
 
@@ -285,13 +288,16 @@ void Renderer::render() {
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
-    glDisable(GL_BLEND);*/
-
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0,0,0,1.0);
+    glClearDepth(1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     passShader->use();
     glBindTextureUnit(0, pingPong.getTexture());
     passShader->setUniform(passShader->getUniformLocation("tex"), 0);
+    passShader->setUniform(passShader->getUniformLocation("size"), glm::vec2(width, height));
 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);

@@ -6,9 +6,9 @@ in vert {
 
 out vec4 outColor;
 
-uniform sampler2D tex;
-uniform vec2 sampleSize;
+uniform sampler2DMS tex;
+uniform vec2 size;
 
 void main() {
-    outColor = texture(tex, IN.texCoord);
+    outColor = texelFetch(tex, ivec2(IN.texCoord * size), 0);
 }

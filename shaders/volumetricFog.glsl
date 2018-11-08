@@ -3,7 +3,8 @@
 
 
 uniform sampler2D shadowMap;
-uniform sampler2D depthMap;
+uniform sampler2DMS depthMap;
+uniform sampler2DMS inColour;
 
 in vert {
     vec2 texCoord;
@@ -15,33 +16,64 @@ uniform mat4 invMat;
 uniform vec3 eyePos;
 
 uniform mat4 shadowVP;
+uniform vec2 size;
+
+#define SAMPLES 128
 
 #include "../shaders/shadow.glsl"
 
 void main() {
 
-    outColor = vec4(0,0,0,1.0);
+    outColor = texelFetch(inColour, ivec2(size * IN.texCoord), 0);
 
-    float depth = 20;//texture(depthMap, IN.texCoord);
+    float depth = texelFetch(depthMap, ivec2(size * IN.texCoord), 0).r;
+    depth = depth * 2.0 - 1.0;
+    vec2 tc = IN.texCoord * 2.0 - 1.0;
+    vec4 clipSpace = vec4(tc, depth, 1.0);
 
-    vec2 tc = IN.texCoord * 2.0 -1.0;
+    vec4 worldSpacePos = invMat * clipSpace;
 
-    vec4 dw = (invMat * vec4(tc, -1.0, 1.0));
-    vec3 d = dw.xyz / dw.w;
-    d -= eyePos;
+    worldSpacePos /= worldSpacePos.w;
+
+    vec3 d = worldSpacePos.xyz - eyePos;
+
+    float camDist = length(d);
+
     d = normalize(d);
 
-    vec3 step = d * (depth / 256);
+    float stepl = (20.0f / SAMPLES);
+    vec3 step = d * stepl;
+
+    float isamples = 1.f / SAMPLES;
+
+    float light = 0;
 
     vec3 pos = eyePos;
-    for(int i = 0; i < 256; i++) {
 
+    float weight = 1.0;
+    float decay = 0.998;
+
+    for(int i = 0; i < SAMPLES; i++) {
+
+        float dist = (i * stepl);
+        if (dist > camDist){
+            break;
+        }
         float s = shadowIntensity(pos);
-        outColor += vec4(vec3((s*s*s)) * 0.001, 1.0);
+        light += s * isamples * weight;
 
         pos += step;
+        weight *= decay;
     }
 
-   // outColor = vec4(d, 1.0);;
+    light *= light;
+
+    light *= 0.5;
+
+
+
+    outColor += vec4(light, light, light, 0.0);
+
+    //outColor = vec4(d, 1.0);
 
 }

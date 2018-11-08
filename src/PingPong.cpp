@@ -9,35 +9,27 @@ PingPong::PingPong(int width, int height) {
     glGenFramebuffers(1, &fboA);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboA);
     glGenTextures(1, &dTexA);
-    glBindTexture(GL_TEXTURE_2D, dTexA);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dTexA, 0);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, dTexA);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH_COMPONENT, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, dTexA, 0);
 
     glGenTextures(1, &cTexA);
-    glBindTexture(GL_TEXTURE_2D, cTexA);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cTexA, 0);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, cTexA);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA8, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, cTexA, 0);
 
 
     glGenFramebuffers(1, &fboB);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboB);
     glGenTextures(1, &dTexB);
-    glBindTexture(GL_TEXTURE_2D, dTexB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dTexB, 0);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, dTexB);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH_COMPONENT, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, dTexB, 0);
 
     glGenTextures(1, &cTexB);
-    glBindTexture(GL_TEXTURE_2D, cTexB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cTexB, 0);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, cTexB);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA8, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, cTexB, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -52,4 +44,12 @@ void PingPong::swap() {
 
 GLuint PingPong::getTexture() {
     return swapped ? cTexA : cTexB;
+}
+
+GLuint PingPong::getBackTexture() {
+    return swapped ? cTexB : cTexA;
+}
+
+GLuint PingPong::getBackDepth() {
+    return swapped ? dTexB : dTexA;
 }

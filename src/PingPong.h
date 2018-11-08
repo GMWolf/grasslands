@@ -23,6 +23,10 @@ public:
 
     GLuint getTexture();
 
+    GLuint getBackTexture();
+
+    GLuint getBackDepth();
+
 };
 
 
