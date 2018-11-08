@@ -41,7 +41,7 @@ void main() {
 
     d = normalize(d);
 
-    float stepl = (20.0f / SAMPLES);
+    float stepl = (25.0f / SAMPLES);
     vec3 step = d * stepl;
 
     float isamples = 1.f / SAMPLES;
@@ -51,7 +51,7 @@ void main() {
     vec3 pos = eyePos;
 
     float weight = 1.0;
-    float decay = 0.998;
+    float decay = 0.9998;
 
     for(int i = 0; i < SAMPLES; i++) {
 
@@ -72,7 +72,7 @@ void main() {
 
 
 
-    outColor += vec4(light, light, light, 0.0);
+    outColor += vec4(0.7, 0.7, 0.8, 0.0) * light;
 
     //outColor = vec4(d, 1.0);
 

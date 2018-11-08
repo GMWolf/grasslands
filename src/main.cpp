@@ -276,7 +276,7 @@ int main() {
 
     std::vector<RenderObject*> rotateObjects;
 
-    for(int i = 0; i < 15; i++) {
+    for(int i = 0; i < 150; i++) {
 
         Transform t{};
 
