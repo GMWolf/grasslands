@@ -11,7 +11,6 @@
 
 class Camera {
 
-
 public:
     Camera(float ratio, float fov, float near, float far);
 

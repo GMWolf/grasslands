@@ -33,9 +33,13 @@ public:
 
     void render();
 
-    void renderBatch(Batch& batch);
-    void renderBatch(StaticBatch& batch);
-    void renderBatch(DynamicBatch& batch);
+    void renderPass(Pass* pass);
+    void renderPass(ScenePass* pass);
+    void renderPass(PostPass* postPass);
+
+    void renderBatch(Batch& batch, ScenePass* pass);
+    void renderBatch(StaticBatch& batch, ScenePass* pass);
+    void renderBatch(DynamicBatch& batch, ScenePass* pass);
 
 
     int numObject = 0;
@@ -56,12 +60,17 @@ public:
     glm::vec3 eyePos;
 
     ShadowMap shadowMap;
+    //CSM shadowMap;
+
+    ScenePass defaultPass;
+
+    std::vector<Pass*> passes;
+
 private:
     void addOctreeNodes(OctreeNode& node);
 
     int width, height;
 
-    bool shadowPass = false;
 
     Shader* quadShader;
     Shader* boxShader;

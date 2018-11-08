@@ -8,24 +8,40 @@
 #include "glad/glad.h"
 #include "glm.hpp"
 #include "Camera.h"
+#include <vector>
+#include "Pass.h"
 
 class ShadowMap {
 public:
-    ShadowMap();
+    explicit ShadowMap(int resolution, float zNear = -1, float zFar = 1);
     ~ShadowMap();
 
     void computeProjections(Camera& cam, const glm::vec3& lightdir);
-
-    glm::mat4 projection;
-    glm::mat4 view;
 
     GLuint tex;
     GLuint dtex;
 
     GLuint btex;
 
-    GLuint fbo;
-    GLuint bfbo;
+    float zNear;
+    float zFar;
+
+    int resolution;
+
+    ScenePass pass;
+    PostPass postPass;
+};
+
+class CSM {
+public:
+    CSM(unsigned int levels, unsigned int baseRes);
+
+
+    void computeProjections(Camera& cam, const glm::vec3& lightDir);
+
+    unsigned int levels;
+    unsigned int baseRes;
+    std::vector<ShadowMap> shadowMaps;
 };
 
 

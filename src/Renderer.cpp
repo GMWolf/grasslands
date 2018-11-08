@@ -7,7 +7,17 @@
 #include "Material.h"
 
 
-Renderer::Renderer(int width, int height) : width(width), height(height) {
+Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048) {
+
+    defaultPass.fbo = 0;
+    defaultPass.shadowPass = false;
+    defaultPass.viewportX = 0;
+    defaultPass.viewportY = 0;
+    defaultPass.viewportW = width;
+    defaultPass.viewportH = height;
+    defaultPass.clearColour = glm::vec4(0.7, 0.7, 0.8, 1.0);
+
+
 
     std::ifstream dispatchFile("../shaders/dispatchGeom.glsl");
     std::string dispatchText((std::istreambuf_iterator<char>(dispatchFile)), (std::istreambuf_iterator<char>()));
@@ -49,13 +59,22 @@ Renderer::Renderer(int width, int height) : width(width), height(height) {
         {GL_GEOMETRY_SHADER, quadGText},
         {GL_FRAGMENT_SHADER, "../shaders/boxFilterFrag.glsl"_read}
     });
+
+    shadowMap.postPass.shader = boxShader;
+
+
+    passes.push_back(&shadowMap.pass);
+    passes.push_back(&shadowMap.postPass);
+    passes.push_back(&defaultPass);
 }
 
 void Renderer::setView(const glm::mat4 &v) {
+    defaultPass.view = v;
     view = v;
 }
 
 void Renderer::setProjection(const glm::mat4 &p) {
+    defaultPass.projection = p;
     proj = p;
 }
 
@@ -63,19 +82,15 @@ void Renderer::setEyePos(const glm::vec3 &pos) {
     eyePos = pos;
 }
 
-void Renderer::renderBatch(Batch &batch) {
+void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
 
-    if(shadowPass && !batch.matType.castShadow) {
+    if(pass->shadowPass && !batch.matType.castShadow) {
         return;
     }
 
     dispatchCompute->use();
 
-    if(shadowPass) {
-        dispatchCompute->setUniform(0, shadowMap.projection * shadowMap.view);
-    } else {
-        dispatchCompute->setUniform(0, proj * view);
-    }
+    dispatchCompute->setUniform(0, pass->projection * pass->view);
 
     //GPU Culling
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.meshBuffer.meshDataBuffer);
@@ -89,7 +104,7 @@ void Renderer::renderBatch(Batch &batch) {
 
     //render indirect
     Shader* shader;
-    if (shadowPass) {
+    if (pass->shadowPass) {
         shader = batch.matType.depthShaderOverride ? batch.matType.depthShaderOverride : defaultDepthShader;
     } else {
         shader = batch.matType.shader;
@@ -99,39 +114,31 @@ void Renderer::renderBatch(Batch &batch) {
             0, 1//, 2, 3, 4, 5, 6, 7
     };
 
-    if(shadowPass) {
-        shader->setUniform(shader->getUniformLocation("MV"), shadowMap.projection * shadowMap.view);
-        shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
-    } else {
-        shader->setUniform(shader->getUniformLocation("projection"), proj);
-        shader->setUniform(shader->getUniformLocation("MV"), proj * view);
-        shader->setUniform(shader->getUniformLocation("eyePos"), eyePos);
-        shader->setUniform(shader->getUniformLocation("lightColour"), glm::vec3(4, 4, 3.25));
-        shader->setUniform(shader->getUniformLocation("lightDir"), glm::vec3(1, 1, 0));
-        shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
-        glBindTextureUnit(9, shadowMap.btex);
-        shader->setUniform(shader->getUniformLocation("shadowMap"), 9);
-        shader->setUniform(shader->getUniformLocation("shadowVP"),shadowMap.projection * shadowMap.view);
-    }
+    glBindTextureUnit(9, shadowMap.btex);
+    shader->setUniform(shader->getUniformLocation("projection"), pass->projection);
+    shader->setUniform(shader->getUniformLocation("MV"), pass->projection * pass->view);
+    shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
+
+    shader->setUniform(shader->getUniformLocation("eyePos"), eyePos);
+    shader->setUniform(shader->getUniformLocation("lightColour"), glm::vec3(4, 4, 3.25));
+    shader->setUniform(shader->getUniformLocation("lightDir"), glm::vec3(1, 1, 0));
+
+    shader->setUniform(shader->getUniformLocation("shadowMap"), 9);
+    shader->setUniform(shader->getUniformLocation("shadowVP"),shadowMap.pass.projection * shadowMap.pass.view);
+
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
-    GLenum prim = shadowPass ? GL_TRIANGLES : batch.matType.primType;
+    GLenum prim = pass->shadowPass ? GL_TRIANGLES : batch.matType.primType;
 
     glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
 }
 
-void Renderer::renderBatch(StaticBatch &batch) {
+void Renderer::renderBatch(StaticBatch &batch, ScenePass* pass) {
 
-
-    glm::mat4 viewproj;
-    if(shadowPass) {
-        viewproj = shadowMap.projection * shadowMap.view;
-    } else {
-        viewproj = proj * view;
-    }
+    glm::mat4 viewproj = pass->projection * pass->view;
 
     glm::vec4 corners[8];
     corners[0] = viewproj * glm::vec4(batch.min[0], batch.max[1], batch.min[2], 1.f);
@@ -161,12 +168,12 @@ void Renderer::renderBatch(StaticBatch &batch) {
 
 
     if(inside) {
-        renderBatch(static_cast<Batch&>(batch));
+        renderBatch(static_cast<Batch&>(batch), pass);
     }
 
 }
 
-void Renderer::renderBatch(DynamicBatch &batch) {
+void Renderer::renderBatch(DynamicBatch &batch, ScenePass* pass) {
 
     //wait on fence
     if(batch.fence[batch.bufferIndex]) {
@@ -186,7 +193,7 @@ void Renderer::renderBatch(DynamicBatch &batch) {
     batch.transformBuffer = batch.transformBuffers[batch.bufferIndex];
 
     //submit
-    renderBatch(static_cast<Batch&>(batch));
+    renderBatch(static_cast<Batch&>(batch), pass);
 
     //fence
     batch.fence[batch.bufferIndex] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -249,29 +256,48 @@ void Renderer::addOctreeNodes(OctreeNode & node) {
 
 void Renderer::render() {
 
-    shadowPass = true;
-    //glNamedFramebufferRenderbuffer(shadowMap.fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, )
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.fbo);
-    glClearColor(0, 0, 0, 0.0);
-    glClearDepth(1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport ( 0 , 0 , 2048, 2048);
+    for(auto p : passes) {
+        renderPass((Pass*) p);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::renderPass(Pass *pass) {
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pass->fbo);
+    glViewport(pass->viewportX, pass->viewportY, pass->viewportW, pass->viewportH);
+
+    if (pass->clearBuffers) {
+        glClearColor(pass->clearColour.x, pass->clearColour.y, pass->clearColour.z, pass->clearColour.w);
+        glClearDepth(1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    if (auto * sp = dynamic_cast<ScenePass*>(pass)){
+        renderPass(sp);
+    } else if(auto * pp = dynamic_cast<PostPass*>(pass)) {
+        renderPass(pp);
+    }
+
+}
+
+void Renderer::renderPass(ScenePass *pass) {
 
     for(auto &batch : dynamicBatches) {
-        renderBatch(batch);
+        renderBatch(batch, pass);
     }
     for(auto &batch : staticBatches) {
-        renderBatch(batch);
+        renderBatch(batch, pass);
     }
 
-    //box filtering
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.bfbo);
-    glClearColor(0, 0, 0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-    boxShader->use();
-    boxShader->setUniform(boxShader->getUniformLocation("sampleSize"), glm::vec2(1.f/2048));
-    glBindTextureUnit(0, shadowMap.tex);
-    boxShader->setUniform(boxShader->getUniformLocation("tex"), 0);
+}
+
+void Renderer::renderPass(PostPass *postPass) {
+
+    postPass->shader->use();
+    postPass->shader->setUniform(postPass->shader->getUniformLocation("sampleSize"), glm::vec2(1.f / 2048));
+    glBindTextureUnit(0, postPass->tex);
+    postPass->shader->setUniform(postPass->shader->getUniformLocation("tex"), 0);
 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
@@ -281,37 +307,10 @@ void Renderer::render() {
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
-
-    glGenerateTextureMipmap(shadowMap.btex);
-    shadowPass = false;
-
-
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-
-    float ratio = width / (float) height;
-    glViewport(0, 0, width, height);
-
-    //Normal color pass
-    shadowPass = false;
-    for(auto &batch : dynamicBatches) {
-        renderBatch(batch);
+    if (postPass->generateMipMaps) {
+        glGenerateTextureMipmap(postPass->dtex);
     }
-    for(auto &batch : staticBatches) {
-        renderBatch(batch);
-    }
-
-
-    /*quadShader->use();
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glBindTextureUnit(0, shadowMap.tex);
-    quadShader->setUniform(quadShader->getUniformLocation("tex"), 0);
-    glDrawArrays(GL_POINTS, 0, 1);
-    glEnable(GL_CULL_FACE);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);*/
 
 }
+
+

@@ -87,7 +87,7 @@ int main() {
     glfwSwapInterval(0);
 
     // During init, enable debug output
-    glEnable(GL_DEBUG_OUTPUT);
+    //glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
     glEnable(GL_MULTISAMPLE);
 
@@ -311,9 +311,6 @@ int main() {
         float dt = thisTime - lastTime;
         lastTime = thisTime;
         time += dt;
-
-        glClearColor(0.7,0.7,0.8,1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera.update(window, dt);
         renderer.setProjection(camera.proj);
