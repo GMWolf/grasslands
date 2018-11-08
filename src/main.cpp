@@ -141,7 +141,7 @@ int main() {
     std::ifstream pbr_evalFile("../shaders/PBRTessellateEvaluation.glsl");
     std::string pbr_evalText((std::istreambuf_iterator<char>(pbr_evalFile)), (std::istreambuf_iterator<char>()));
     std::ifstream pbr_fragFile("../shaders/PBRFragment.glsl");
-    std::string pbr_fragText((std::istreambuf_iterator<char>(pbr_fragFile)), (std::istreambuf_iterator<char>()));
+    std::string pbr_fragText("../shaders/PBRFragment.glsl"_preprocess);
 
     /*Shader* pbrTesselateShader = new Shader({
         {GL_VERTEX_SHADER, pbrtess_vertexText},
@@ -166,20 +166,14 @@ int main() {
         mat1,mat2,mat3,mat4
     };
 
-
-    std::ifstream grass_vertFile("../shaders/grassVertex.glsl");
-    std::string grass_vertText((std::istreambuf_iterator<char>(grass_vertFile)), (std::istreambuf_iterator<char>()));
-    std::ifstream grass_fragFile("../shaders/grassFragment.glsl");
-    std::string grass_fragText((std::istreambuf_iterator<char>(grass_fragFile)), (std::istreambuf_iterator<char>()));
-
     Shader* grassShader = new Shader({
-        {GL_VERTEX_SHADER, grass_vertText},
-        {GL_FRAGMENT_SHADER, grass_fragText}
+        {GL_VERTEX_SHADER,   "../shaders/grassVertex.glsl"_preprocess},
+        {GL_FRAGMENT_SHADER, "../shaders/grassFragment.glsl"_preprocess}
     });
 
     Shader* grassShadowShader = new Shader({
-        {GL_VERTEX_SHADER, "../shaders/grassDepthVert.glsl"_read},
-        {GL_FRAGMENT_SHADER, "../shaders/grassDepthFrag.glsl"_read}
+        {GL_VERTEX_SHADER,   "../shaders/grassDepthVert.glsl"_preprocess},
+        {GL_FRAGMENT_SHADER, "../shaders/grassDepthFrag.glsl"_preprocess}
     });
 
 
@@ -222,13 +216,11 @@ int main() {
     glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
     //glEnable(GL_FRAMEBUFFER_SRGB);
 
-    double lastTime = glfwGetTime();
-    float time = 0;
 
+    //CREATE bunch of objects
     std::vector<RenderObject> objects;
     std::vector<RenderObject*> objptr;
     srand(10);
-
 
     for(int i = -100; i < 100; i++) {
         for(int j = -100; j < 100; j++) {
@@ -282,7 +274,6 @@ int main() {
         }
     }
 
-
     std::vector<RenderObject*> rotateObjects;
 
     for(int i = 0; i < 15; i++) {
@@ -305,6 +296,9 @@ int main() {
     renderer.addObjects(objptr);
 
 
+    //Main loop
+    float lastTime = glfwGetTime();
+    float time = 0;
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
 
         float thisTime = glfwGetTime();
@@ -325,8 +319,6 @@ int main() {
             o->transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
-
-        //renderer.submit(bvh);
         renderer.render();
 
         glfwSwapBuffers(window);

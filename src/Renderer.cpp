@@ -7,7 +7,7 @@
 #include "Material.h"
 
 
-Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048) {
+Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height) {
 
     defaultPass.fbo = 0;
     defaultPass.shadowPass = false;
@@ -18,23 +18,14 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     defaultPass.clearColour = glm::vec4(0.7, 0.7, 0.8, 1.0);
 
 
-
-    std::ifstream dispatchFile("../shaders/dispatchGeom.glsl");
-    std::string dispatchText((std::istreambuf_iterator<char>(dispatchFile)), (std::istreambuf_iterator<char>()));
-
     dispatchCompute = new Shader({
-        {GL_COMPUTE_SHADER, dispatchText}
+        {GL_COMPUTE_SHADER, "../shaders/dispatchGeom.glsl"_read}
     });
 
 
-    std::ifstream depthVertFile("../shaders/depthVert.glsl");
-    std::string depthVertText((std::istreambuf_iterator<char>(depthVertFile)), (std::istreambuf_iterator<char>()));
-
-    std::ifstream depthFragFile("../shaders/depthFragment.glsl");
-    std::string depthFragText((std::istreambuf_iterator<char>(depthFragFile)), (std::istreambuf_iterator<char>()));
     defaultDepthShader = new Shader({
-        {GL_VERTEX_SHADER, depthVertText},
-        {GL_FRAGMENT_SHADER, depthFragText}
+        {GL_VERTEX_SHADER, "../shaders/depthVert.glsl"_read},
+        {GL_FRAGMENT_SHADER, "../shaders/depthFragment.glsl"_read}
     });
 
 
@@ -62,6 +53,17 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
 
     shadowMap.postPass.shader = boxShader;
 
+    volumetricShader = new Shader({
+        {GL_VERTEX_SHADER, quadVertText},
+        {GL_GEOMETRY_SHADER, quadGText},
+        {GL_FRAGMENT_SHADER, "../shaders/volumetricFog.glsl"_preprocess}
+    });
+
+    passShader = new Shader({
+        {GL_VERTEX_SHADER, quadVertText},
+        {GL_GEOMETRY_SHADER, quadGText},
+        {GL_FRAGMENT_SHADER, "../shaders/passthrough.glsl"_preprocess}
+    });
 
     passes.push_back(&shadowMap.pass);
     passes.push_back(&shadowMap.postPass);
@@ -260,11 +262,55 @@ void Renderer::render() {
         renderPass((Pass*) p);
     }
 
+
+    /*glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    volumetricShader->setUniform(volumetricShader->getUniformLocation("invMat"), glm::inverse(defaultPass.projection * defaultPass.view));
+    volumetricShader->setUniform(volumetricShader->getUniformLocation("eyePos"), eyePos);
+    volumetricShader->setUniform(volumetricShader->getUniformLocation("shadowVP"), shadowMap.pass.projection * shadowMap.pass.view);
+    glBindTextureUnit(0, shadowMap.btex);
+    volumetricShader->setUniform(volumetricShader->getUniformLocation("shadowMap"), 0);
+
+    glEnable(GL_BLEND);
+    glBlendFunc (GL_ONE, GL_ONE);
+
+    volumetricShader->use();
+
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDrawArrays(GL_POINTS, 0, 1);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
+    glDisable(GL_BLEND);*/
+
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    passShader->use();
+    glBindTextureUnit(0, pingPong.getTexture());
+    passShader->setUniform(passShader->getUniformLocation("tex"), 0);
+
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDrawArrays(GL_POINTS, 0, 1);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
 }
 
 void Renderer::renderPass(Pass *pass) {
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pass->fbo);
+
+    if (pass->fbo) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pass->fbo);
+    } else {
+        pingPong.swap();
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    }
     glViewport(pass->viewportX, pass->viewportY, pass->viewportW, pass->viewportH);
 
     if (pass->clearBuffers) {

@@ -37,97 +37,12 @@ in Vertex {
 
 out vec4 outColor;
 
-// http://www.thetenthplanet.de/archives/1180
-mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)
-{
-    // get edge vectors of the pixel triangle
-    vec3 dp1 = dFdx( p );
-    vec3 dp2 = dFdy( p );
-    vec2 duv1 = dFdx( uv );
-    vec2 duv2 = dFdy( uv );
-
-    // solve the linear system
-    vec3 dp2perp = cross( dp2, N );
-    vec3 dp1perp = cross( N, dp1 );
-    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
-    // construct a scale-invariant frame
-    float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
-    return mat3( T * invmax, B * invmax, N );
-}
-
-
-vec3 perturb_normal( vec3 vertex_normal, vec3 viewVector, vec2 texcoord, vec3 map )
-{
-    // assume vertex_normal, the interpolated vertex normal and
-    // viewVector, the view vector (vertex to eye)
-    mat3 TBN = cotangent_frame(vertex_normal, -viewVector, texcoord);
-    return normalize(TBN * map);
-}
-
-//Distribution GGX
-float D_GGX(vec3 N, vec3 H, float a) {
-    float a2 = a*a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-    float nom = a2;
-    float denom = (NdotH2*(a2- 1.0) + 1.0);
-    denom = PI * denom * denom;
-
-    return nom / denom;
-}
-
-float G_GGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
-
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-
-    return num / denom;
-}
-
-float G_smith(vec3 N, vec3 V, vec3 L, float K) {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx1 = G_GGX(NdotV, K);
-    float ggx2 = G_GGX(NdotL, K);
-    return ggx1 * ggx2;
-}
-
-vec3 fresnel(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(1.0-cosTheta, 5.0);
-}
+#include "../shaders/normals.glsl"
+#include "../shaders/PBR.glsl"
+#include "../shaders/shadow.glsl"
 
 vec4 matTexture(ivec2 t, vec2 texcoord) {
     return texture(tex[t.x], vec3(texcoord, t.y));
-}
-
-uniform float u_minVariance = 0.0001;
-//https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch08.html
-float ChebyshecUpperBound(vec2 moments, float t) {
-
-    float p = float(t <= moments.x);
-
-    float variance = moments.y - (moments.x * moments.x);
-    variance = max(variance, u_minVariance);
-    float d = t - moments.x;
-    float p_max = variance / (variance + d*d);
-    return max(p, p_max);
-
-}
-
-float shadowIntensity() {
-    vec4 shadowCoord = (shadowVP * vec4(IN.worldPos + IN.normal * 0.001, 1.0));
-    shadowCoord.xy /= shadowCoord.w;
-    shadowCoord.xy = (shadowCoord.xy + 1) / 2.0f;
-    vec4 shadowFrag =  texture(shadowMap, shadowCoord.xy);
-
-    //return int(shadowFrag.x > shadowCoord.z);
-
-    vec2 moments = shadowFrag.xy;
-    return ChebyshecUpperBound(moments, shadowCoord.z);
 }
 
 void main()
@@ -175,8 +90,7 @@ void main()
     vec3 ambient = vec3(0.25) * albedo * AO;
 
 
-    light *= shadowIntensity();
-
+    light *= shadowIntensity(IN.worldPos + IN.normal * 0.001);
 
 
     outColor = vec4(light + ambient, 1.0);

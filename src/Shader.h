@@ -11,6 +11,8 @@
 #include <iostream>
 #include <map>
 #include <fstream>
+#include <sstream>
+#include <regex>
 
 class Shader {
 public:
@@ -59,6 +61,39 @@ inline std::string operator "" _read(const char* p, size_t l) {
     std::string text((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
     return text;
 }
+
+inline void parseIn(std::istream& in, std::ostream& out) {
+
+    static std::regex includeRegex(R"(#include\s+"([\w\./\\]+)\s*")");
+
+    std::string line;
+    std::smatch match;
+    while(std::getline(in, line)) {
+        if (std::regex_match(line, match, includeRegex)) {
+
+            std::ifstream file (match[1]);
+
+            parseIn(file, out);
+        } else {
+            out << line << "\n";
+        }
+    }
+}
+
+inline std::string operator "" _preprocess(const char *p, size_t l){
+
+    std::ifstream file(std::string(p, l));
+    if (!file) {
+        throw std::exception();
+    }
+
+    std::stringstream ss;
+    parseIn(file, ss);
+
+    return ss.str();
+}
+
+
 
 
 #endif //WAGLE2_SHADER_H

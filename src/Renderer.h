@@ -20,6 +20,7 @@
 #include "Batch.h"
 #include <map>
 #include "ShadowMap.h"
+#include "PingPong.h"
 
 class Renderer {
 
@@ -66,14 +67,17 @@ public:
 
     std::vector<Pass*> passes;
 
+    PingPong pingPong;
+
 private:
     void addOctreeNodes(OctreeNode& node);
 
     int width, height;
 
-
+    Shader* volumetricShader;
     Shader* quadShader;
     Shader* boxShader;
+    Shader* passShader;
 };
 
 
