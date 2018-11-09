@@ -73,6 +73,7 @@ private:
     void addOctreeNodes(OctreeNode& node);
 
     int width, height;
+    float time = 0;
 
     Shader* volumetricShader;
     Shader* quadShader;

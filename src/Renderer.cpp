@@ -189,6 +189,7 @@ void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
 
     shader->setUniform(shader->getUniformLocation("shadowMap"), 9);
     shader->setUniform(shader->getUniformLocation("shadowVP"),shadowMap.pass.projection * shadowMap.pass.view);
+    shader->setUniform("time", time);
 
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
@@ -319,6 +320,8 @@ void Renderer::addOctreeNodes(OctreeNode & node) {
 }
 
 void Renderer::render(float time) {
+
+    this->time = time;
 
     for(auto p : passes) {
         renderPass((Pass*) p);

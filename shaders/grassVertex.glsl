@@ -20,6 +20,7 @@ layout(std430, binding = 0) buffer transformBuffer
 
 uniform mat4 MV;
 uniform vec3 eyePos;
+uniform float time;
 
 
 out Vertex {
@@ -41,7 +42,7 @@ void main()
 {
     Transform t = ModelTransform[drawID];
 
-    vec3 pos = (rotate(position, t.rot) * t.scale) + t.pos;
+    vec3 pos = (rotate(position, t.rot) * t.scale) + t.pos + vec3(0.025,0,0) * (sin(time + position.x) * position.y);
     gl_Position = MV * vec4(pos, 1.0);
     OUT.drawID = drawID;
     OUT.normal = rotate(normal, t.rot);
