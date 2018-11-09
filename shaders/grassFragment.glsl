@@ -104,7 +104,7 @@ void main()
     vec3 translucency = matTexture(mat.translucency, IN.texcoord).xyz;
     float NdotLI = min(max(dot(-N, L), 0), 1);
 
-    float EdotL = min(max(dot(normalize(IN.viewVector), -L), 0.4), 1);
+    float EdotL = min(max(dot(normalize(IN.viewVector), -L), 0.0), 1);
 
     vec3 transmit = (EdotL * NdotLI + ambient) * translucency * radiance * albedo ;
 

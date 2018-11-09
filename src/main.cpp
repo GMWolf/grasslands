@@ -87,7 +87,7 @@ int main() {
     glfwSwapInterval(0);
 
     // During init, enable debug output
-    //glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
     glEnable(GL_MULTISAMPLE);
 

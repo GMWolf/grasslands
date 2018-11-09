@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include <fstream>
 #include "Material.h"
+#include "CUBELoader.h"
 
 
 Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height) {
@@ -96,6 +97,37 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("time"), 0.5f);
     };
     passes.push_back(volumetricPass);
+
+
+    //LUT = loadCubeLUT("../LUTs/Neon 770.CUBE");
+    //LUT = loadCubeLUT("../LUTs/Django 25.CUBE");
+    LUT = loadCubeLUT("../LUTs/Bourbon 64.CUBE");
+    gradeShader = new Shader ({
+            {GL_VERTEX_SHADER, quadVertText},
+            {GL_GEOMETRY_SHADER, quadGText},
+            {GL_FRAGMENT_SHADER, "../shaders/grade.glsl"_preprocess}
+    });
+
+
+    PostPass* gradePass = new PostPass;
+    gradePass->tex = 0;
+    gradePass->fbo = 0;
+    gradePass->shader = gradeShader;
+    gradePass->viewportX = 0;
+    gradePass->viewportY = 0;
+    gradePass->viewportW = width;
+    gradePass->viewportH = height;
+    gradePass->generateMipMaps = false;
+    gradePass->clearBuffers = true;
+    gradePass->clearColour = glm::vec4(0,0,0,1);
+    gradePass->setup = [this]() {
+       gradeShader->setUniform("size", glm::vec2(this->width, this->height));
+       glBindTextureUnit(1, LUT);
+       gradeShader->setUniform("LUT", 1);
+       gradeShader->setUniform("lutSize", 32.0f);
+    };
+
+    passes.push_back(gradePass);
 
 }
 

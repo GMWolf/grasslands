@@ -78,6 +78,9 @@ private:
     Shader* quadShader;
     Shader* boxShader;
     Shader* passShader;
+    Shader* gradeShader;
+
+    GLuint LUT;
 };
 
 
