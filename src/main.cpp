@@ -276,7 +276,7 @@ int main() {
 
     std::vector<RenderObject*> rotateObjects;
 
-    for(int i = 0; i < 150; i++) {
+    for(int i = 0; i < 200; i++) {
 
         Transform t{};
 
@@ -285,7 +285,19 @@ int main() {
         t.rot = glm::quat(glm::vec3(0, (rand() / (float)RAND_MAX) * 2 * 3.14159, 0));
         t.scale = 5;
 
-        objects.emplace_back(meshes[rand() % 4], materials[rand() % 4], t);
+        objects.emplace_back(box, materials[rand() % 4], t, true);
+    }
+
+    for(int i = 0; i < 150; i++) {
+
+        Transform t{};
+
+        glm::vec2 pos2D = glm::diskRand(100.f);
+        t.pos = glm::vec3(pos2D.x, 15, pos2D.y);
+        t.rot = glm::quat(glm::vec3(0, (rand() / (float)RAND_MAX) * 2 * 3.14159, 0));
+        t.scale = 5;
+
+        objects.emplace_back(gear, materials[rand() % 4], t);
         rotateObjects.push_back(&objects.back());
     }
 
@@ -319,7 +331,7 @@ int main() {
             o->transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
 
-        renderer.render();
+        renderer.render(time);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

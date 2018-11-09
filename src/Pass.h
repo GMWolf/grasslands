@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 #include <glm.hpp>
 #include "Shader.h"
+#include <functional>
 
 struct Pass {
     Pass() {
@@ -25,6 +26,8 @@ struct Pass {
     bool clearBuffers = true;
     glm::vec4 clearColour = glm::vec4(42,42,42,42);
     int viewportX, viewportY, viewportW, viewportH;
+
+    std::function<void(void)> setup;
 };
 
 struct ScenePass : public Pass {
@@ -42,6 +45,8 @@ struct PostPass : public Pass {
     GLuint tex;
     GLuint dtex;
     bool generateMipMaps;
+
+
 };
 
 

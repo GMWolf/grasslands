@@ -32,7 +32,7 @@ public:
     void setView(const glm::mat4& view);
     void setEyePos(const glm::vec3& pos);
 
-    void render();
+    void render(float time);
 
     void renderPass(Pass* pass);
     void renderPass(ScenePass* pass);

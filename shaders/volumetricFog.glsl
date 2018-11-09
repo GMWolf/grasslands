@@ -18,9 +18,13 @@ uniform vec3 eyePos;
 uniform mat4 shadowVP;
 uniform vec2 size;
 
-#define SAMPLES 128
+uniform float time;
+
+#define SAMPLES 512
 
 #include "../shaders/shadow.glsl"
+
+#include "../shaders/noise.glsl"
 
 void main() {
 
@@ -41,12 +45,12 @@ void main() {
 
     d = normalize(d);
 
-    float stepl = (25.0f / SAMPLES);
+    float stepl = (30.0f / SAMPLES);
     vec3 step = d * stepl;
 
     float isamples = 1.f / SAMPLES;
 
-    float light = 0;
+    float light = 0.0f;
 
     vec3 pos = eyePos;
 
@@ -60,20 +64,17 @@ void main() {
             break;
         }
         float s = shadowIntensity(pos);
-        light += s * isamples * weight;
+        float n = 1;//clamp((1 + snoise(vec4(pos * 0.3, time))) * 0.5, 0, 1);
+
+        light += s * isamples * weight;// * pow(n, 0.5);
 
         pos += step;
-        weight *= decay;
+       weight *= decay;
     }
 
     light *= light;
 
-    light *= 0.5;
+    //light *= 0.5;
 
-
-
-    outColor += vec4(0.7, 0.7, 0.8, 0.0) * light;
-
-    //outColor = vec4(d, 1.0);
-
+    outColor  += vec4( vec3(0.7, 0.7, 0.8) * light, 0.0);
 }

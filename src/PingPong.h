@@ -27,6 +27,7 @@ public:
 
     GLuint getBackDepth();
 
+    GLuint getDepth();
 };
 
 

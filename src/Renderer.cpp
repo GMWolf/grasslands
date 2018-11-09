@@ -69,6 +69,34 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     passes.push_back(&shadowMap.pass);
     passes.push_back(&shadowMap.postPass);
     passes.push_back(&defaultPass);
+
+    PostPass* volumetricPass = new PostPass;
+    volumetricPass->clearBuffers = true;
+    volumetricPass->shader = volumetricShader;
+    volumetricPass->clearColour = glm::vec4(0,0,0,1.0);
+    volumetricPass->generateMipMaps = false;
+    volumetricPass->viewportX = 0;
+    volumetricPass->viewportY = 0;
+    volumetricPass->viewportW = width;
+    volumetricPass->viewportH = height;
+    volumetricPass->fbo = 0;
+    volumetricPass->tex = 0;
+
+    volumetricPass->setup = [this, volumetricPass](){
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("invMat"), glm::inverse(defaultPass.projection * defaultPass.view));
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("eyePos"), eyePos);
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("shadowVP"), shadowMap.pass.projection * shadowMap.pass.view);
+        glBindTextureUnit(0, shadowMap.btex);
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("shadowMap"), 0);
+        glBindTextureUnit(1, pingPong.getTexture());
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("inColour"), 1);
+        glBindTextureUnit(2, pingPong.getDepth());
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("depthMap"), 2);
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("size"), glm::vec2(this->width, this->height));
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("time"), 0.5f);
+    };
+    passes.push_back(volumetricPass);
+
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -257,37 +285,11 @@ void Renderer::addOctreeNodes(OctreeNode & node) {
 
 }
 
-void Renderer::render() {
+void Renderer::render(float time) {
 
     for(auto p : passes) {
         renderPass((Pass*) p);
     }
-
-
-    pingPong.swap();
-    glBindFramebuffer(GL_FRAMEBUFFER, pingPong.getFBO());
-
-    volumetricShader->setUniform(volumetricShader->getUniformLocation("invMat"), glm::inverse(defaultPass.projection * defaultPass.view));
-    volumetricShader->setUniform(volumetricShader->getUniformLocation("eyePos"), eyePos);
-    volumetricShader->setUniform(volumetricShader->getUniformLocation("shadowVP"), shadowMap.pass.projection * shadowMap.pass.view);
-    glBindTextureUnit(0, shadowMap.btex);
-    volumetricShader->setUniform(volumetricShader->getUniformLocation("shadowMap"), 0);
-    glBindTextureUnit(1, pingPong.getBackTexture());
-    volumetricShader->setUniform(volumetricShader->getUniformLocation("inColour"), 1);
-    glBindTextureUnit(2, pingPong.getBackDepth());
-    volumetricShader->setUniform(volumetricShader->getUniformLocation("depthMap"), 2);
-    volumetricShader->setUniform(volumetricShader->getUniformLocation("size"), glm::vec2(width, height));
-
-    volumetricShader->use();
-
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glDrawArrays(GL_POINTS, 0, 1);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0,0,0,1.0);
@@ -299,6 +301,7 @@ void Renderer::render() {
     passShader->setUniform(passShader->getUniformLocation("tex"), 0);
     passShader->setUniform(passShader->getUniformLocation("size"), glm::vec2(width, height));
 
+
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
@@ -306,10 +309,13 @@ void Renderer::render() {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
-
 }
 
 void Renderer::renderPass(Pass *pass) {
+
+    if (pass->setup) {
+        pass->setup();
+    }
 
     if (pass->fbo) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pass->fbo);
@@ -347,9 +353,13 @@ void Renderer::renderPass(ScenePass *pass) {
 void Renderer::renderPass(PostPass *postPass) {
 
     postPass->shader->use();
+
     postPass->shader->setUniform(postPass->shader->getUniformLocation("sampleSize"), glm::vec2(1.f / 2048));
-    glBindTextureUnit(0, postPass->tex);
-    postPass->shader->setUniform(postPass->shader->getUniformLocation("tex"), 0);
+
+    if (postPass->tex) {
+        glBindTextureUnit(0, postPass->tex);
+        postPass->shader->setUniform(postPass->shader->getUniformLocation("tex"), 0);
+    }
 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);

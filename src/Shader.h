@@ -38,6 +38,11 @@ public:
     template<class T>
     void setUniform(GLint location, const T& value);
 
+    template<class T>
+    void setUniform(std::string name, const T& value) {
+        setUniform(getUniformLocation(name), value);
+    }
+
     operator bool() {
         return compiled;
     }
