@@ -18,5 +18,5 @@ void main() {
     float scale = (lutSize - 1.0) / lutSize;
     float offset = 1.0 / (2.0 * lutSize);
 
-    outColor = vec4(texture(LUT, offset + inColour * scale).xyz, 1.0);
+    outColor = vec4(texture(LUT, offset + inColour * scale).rgb, 1.0);
 }

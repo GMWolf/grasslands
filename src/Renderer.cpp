@@ -102,6 +102,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     //LUT = loadCubeLUT("../LUTs/Neon 770.CUBE");
     //LUT = loadCubeLUT("../LUTs/Django 25.CUBE");
     LUT = loadCubeLUT("../LUTs/Bourbon 64.CUBE");
+    //LUT = loadCubeLUT("../LUTs/Faded 47.CUBE");
     gradeShader = new Shader ({
             {GL_VERTEX_SHADER, quadVertText},
             {GL_GEOMETRY_SHADER, quadGText},
