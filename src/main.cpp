@@ -67,7 +67,7 @@ int main() {
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
-    window = glfwCreateWindow(1280, 720, "Grasslands", NULL, NULL);
+    window = glfwCreateWindow(1920, 1080, "Grasslands", glfwGetPrimaryMonitor(), NULL);
 
 
     if (!window) {
