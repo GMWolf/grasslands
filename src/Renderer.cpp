@@ -96,7 +96,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("size"), glm::vec2(this->width, this->height));
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("time"), 0.5f);
     };
-    //passes.push_back(volumetricPass);
+    passes.push_back(volumetricPass);
 
 
     //LUT = loadCubeLUT("../LUTs/Neon 770.CUBE");
@@ -128,7 +128,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
        gradeShader->setUniform("lutSize", 32.0f);
     };
 
-    //passes.push_back(gradePass);
+    passes.push_back(gradePass);
 
 }
 
