@@ -129,7 +129,6 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     };
 
     passes.push_back(gradePass);
-
 }
 
 void Renderer::setView(const glm::mat4 &v) {
