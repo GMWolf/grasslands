@@ -47,7 +47,7 @@ layout(std430, binding = 2) writeonly buffer outputCommandsBuffer
     DrawCommand outputCommands[];
 };
 
-layout(binding = 3, offset = 0) uniform atomic_uint commandCount;
+layout(binding = 3) uniform atomic_uint commandCount;
 
 layout(std430, binding = 4) readonly buffer transformBuffer
 {

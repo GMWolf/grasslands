@@ -68,7 +68,7 @@ int main() {
 
     //glfwGetPrimaryMonitor()
     GLFWmonitor* monitor = nullptr;
-    //monitor = glfwGetPrimaryMonitor();
+    monitor = glfwGetPrimaryMonitor();
     window = glfwCreateWindow(1920, 1080, "Grasslands", monitor, NULL);
 
 

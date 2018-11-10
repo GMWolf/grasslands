@@ -30,10 +30,11 @@ struct Batch {
     GLuint batchSize;
 
     union {
-        GLuint bufferObjects[4];
+        GLuint bufferObjects[5];
         struct {
             GLuint computeCullCommandsBuffer;
             GLuint indirectBuffer;
+            GLuint paramBuffer;
             GLuint materialIndexBuffer;
             GLuint transformBuffer;
         };

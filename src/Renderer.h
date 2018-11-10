@@ -81,6 +81,8 @@ private:
     Shader* passShader;
     Shader* gradeShader;
 
+    GLuint zeroBuffer;
+
     GLuint LUT;
 };
 
