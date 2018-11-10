@@ -47,7 +47,9 @@ layout(std430, binding = 2) writeonly buffer outputCommandsBuffer
     DrawCommand outputCommands[];
 };
 
-layout(std430, binding = 3) readonly buffer transformBuffer
+layout(binding = 3, offset = 0) uniform atomic_uint commandCount;
+
+layout(std430, binding = 4) readonly buffer transformBuffer
 {
     Transform transforms[];
 };
@@ -124,17 +126,18 @@ bool OOBBInFrustrum(vec3 min, vec3 max, Transform transform, mat4 viewproj) {
 }
 void main() {
 
-    uint index = gl_GlobalInvocationID.x;
+    Mesh m = meshData[inputCommands[gl_GlobalInvocationID.x].meshIndex];
 
-    Mesh m = meshData[inputCommands[index].meshIndex];
 
-    outputCommands[index].count = m.elementCount;
-    if(u_doCull) {
-        outputCommands[index].instanceCount = uint(OOBBInFrustrum(m.bboxMin, m.bboxmax, transforms[index], u_viewproj));
-    } else {
-        outputCommands[index].instanceCount = 1;
+    if(!u_doCull || OOBBInFrustrum(m.bboxMin, m.bboxmax, transforms[gl_GlobalInvocationID.x], u_viewproj)) {
+        uint index = atomicCounterIncrement(commandCount);
+
+       outputCommands[index].count = m.elementCount;
+       outputCommands[index].instanceCount = 1;
+       outputCommands[index].firstIndex = m.first;
+       outputCommands[index].baseVertex = m.baseVertex;
+       outputCommands[index].baseInstance = gl_GlobalInvocationID.x;
     }
-     outputCommands[index].firstIndex = m.first;
-    outputCommands[index].baseVertex = m.baseVertex;
-    outputCommands[index].baseInstance = index;
+
+
 }

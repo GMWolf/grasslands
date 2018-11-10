@@ -45,7 +45,7 @@ StaticBatch::StaticBatch(std::vector<RenderObject*> &robj) : Batch(robj.size(), 
     glCreateBuffers(4, bufferObjects);
 
     glNamedBufferStorage(computeCullCommandsBuffer, batchSize * sizeof(ComputeCullCommand), commands, 0);
-    glNamedBufferStorage(indirectBuffer, batchSize * sizeof(DrawElementsIndirectCommand), nullptr, 0);
+    glNamedBufferStorage(indirectBuffer, 64 +(batchSize * sizeof(DrawElementsIndirectCommand)), nullptr, 0);
     glNamedBufferStorage(materialIndexBuffer, batchSize * sizeof(GLuint), materialIndices, 0);
     glNamedBufferStorage(transformBuffer, batchSize * sizeof(Transform), transforms, 0);
 
@@ -70,7 +70,7 @@ DynamicBatch::DynamicBatch(std::vector<RenderObject*>& robj) :
 
     glCreateBuffers(3, bufferObjects);
     glNamedBufferStorage(computeCullCommandsBuffer, batchSize * sizeof(ComputeCullCommand), commands, 0);
-    glNamedBufferStorage(indirectBuffer, batchSize * sizeof(DrawElementsIndirectCommand), nullptr, 0);
+    glNamedBufferStorage(indirectBuffer, 64 + (batchSize * sizeof(DrawElementsIndirectCommand)), nullptr, 0);
     glNamedBufferStorage(materialIndexBuffer, batchSize * sizeof(GLuint), materialIndices, 0);
 
     //multi buffered transform buffer

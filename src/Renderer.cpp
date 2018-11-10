@@ -156,11 +156,12 @@ void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
 
     dispatchCompute->setUniform(0, pass->projection * pass->view);
 
-    //GPU Culling
+    //GPU dispatch
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.meshBuffer.meshDataBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.computeCullCommandsBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.indirectBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, batch.transformBuffer);
+    glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 2, batch.indirectBuffer, 64, batch.batchSize * sizeof(DrawElementsIndirectCommand));
+    glBindBufferRange(GL_ATOMIC_COUNTER_BUFFER, 3, batch.indirectBuffer, 0, 64);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, batch.transformBuffer);
 
     glDispatchCompute(batch.batchSize, 1, 1);
 
@@ -193,12 +194,18 @@ void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
 
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
+    glBindBuffer(GL_PARAMETER_BUFFER_ARB, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
     GLenum prim = pass->shadowPass ? GL_TRIANGLES : batch.matType.primType;
 
-    glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
+    //glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, (void*)4, batch.batchSize, 0);
+    glMultiDrawElementsIndirectCountARB(prim, GL_UNSIGNED_SHORT, (void*)64, 0, batch.batchSize, 0);
+
+    glInvalidateBufferData(batch.indirectBuffer);
+    GLuint zero = 0;
+    glClearNamedBufferSubData(batch.indirectBuffer, GL_R32UI, 0, sizeof(GLuint), GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
 }
 
 void Renderer::renderBatch(StaticBatch &batch, ScenePass* pass) {
