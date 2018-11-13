@@ -16,6 +16,8 @@ Mesh ObjLoader::load(MeshBuffer &buffer, const std::string &filename) {
     std::ifstream file;
     file.open(filename, std::ios::in);
 
+    std::cout << "loading " << filename << "\n";
+
     if (!file.is_open()) {
         std::cout << "Could not open file " << filename << std::endl;
         return buffer.getMesh(std::vector<vertexData>(),std::vector<GLushort >());

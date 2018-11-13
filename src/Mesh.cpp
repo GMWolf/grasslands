@@ -4,6 +4,7 @@
 
 #include "Mesh.h"
 #include <limits>
+#include <iostream>
 
 vertexData::vertexData(const glm::vec3 &p, const glm::vec3 &n, const glm::vec2 &t) {
     position = p;
@@ -81,8 +82,9 @@ Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertices, const std::vec
     nextBaseVertex += vertices.size();
 
     //Calculate bounding box
-    auto bboxMax = glm::vec3(-std::numeric_limits<float>::max());
-    auto bboxMin = glm::vec3(std::numeric_limits<float>::max());
+    auto bboxMax = glm::vec3(-std::numeric_limits<float>::infinity());
+
+    auto bboxMin = glm::vec3(std::numeric_limits<float>::infinity());
     //Calculate bboxN
     for(const vertexData& v : vertices) {
         glm::vec3 pos = v.position;
@@ -96,6 +98,10 @@ Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertices, const std::vec
     //Write vertex and element data
     glNamedBufferSubData(vertexBuffer, baseVertex * sizeof(vertexData), vertices.size() * sizeof(vertexData), vertices.data());
     glNamedBufferSubData(elementBuffer, first * sizeof(GLushort), elements.size() * sizeof(GLushort), elements.data());
+
+
+    std::cout << "min: " << bboxMin.x << " " << bboxMin.y << " " << bboxMin.z << "\n";
+    std::cout << "max: " << bboxMax.x << " " << bboxMax.y << " " << bboxMax.z << "\n";
 
     return Mesh(this, index, bboxMin, bboxMax);
 }

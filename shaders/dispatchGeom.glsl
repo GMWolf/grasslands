@@ -91,22 +91,30 @@ mat4 transformToMatrix(Transform t) {
     return result;
 }
 
+vec3 rotate(vec3 vec, vec4 quat) {
+    vec3 t = 2 * cross(quat.xyz, vec);
+    return vec + quat.w * t + cross(quat.xyz, t);
+    //return vec + 2.0 * cross( cross(quat.xyz, vec) + quat.w * vec, quat.xyz);
+}
+
+vec3 applyTransform(vec3 vec, Transform t) {
+    return rotate(vec, t.rot) * t.scale + t.pos;
+}
 
 bool OOBBInFrustrum(vec3 min, vec3 max, Transform transform, mat4 viewproj) {
 
-    mat4 toClipSpace = viewproj * transformToMatrix(transform);
-
+    mat4 toClipSpace = viewproj;// * transformToMatrix(transform);
 
     //Project all 8 bbox points
     vec4 bbox[8];
-    bbox[0] = toClipSpace * vec4(min[0], max[1], min[2], 1.f);
-    bbox[1] = toClipSpace * vec4(min[0], max[1], max[2], 1.f);
-    bbox[2] = toClipSpace * vec4(max[0], max[1], max[2], 1.f);
-    bbox[3] = toClipSpace * vec4(max[0], max[1], min[2], 1.f);
-    bbox[4] = toClipSpace * vec4(max[0], min[1], min[2], 1.f);
-    bbox[5] = toClipSpace * vec4(max[0], min[1], max[2], 1.f);
-    bbox[6] = toClipSpace * vec4(min[0], min[1], max[2], 1.f);
-    bbox[7] = toClipSpace * vec4(min[0], min[1], min[2], 1.f);
+    bbox[0] = toClipSpace * vec4(applyTransform(vec3(min[0], max[1], min[2]), transform), 1.f);
+    bbox[1] = toClipSpace * vec4(applyTransform(vec3(min[0], max[1], max[2]), transform), 1.f);
+    bbox[2] = toClipSpace * vec4(applyTransform(vec3(max[0], max[1], max[2]), transform), 1.f);
+    bbox[3] = toClipSpace * vec4(applyTransform(vec3(max[0], max[1], min[2]), transform), 1.f);
+    bbox[4] = toClipSpace * vec4(applyTransform(vec3(max[0], min[1], min[2]), transform), 1.f);
+    bbox[5] = toClipSpace * vec4(applyTransform(vec3(max[0], min[1], max[2]), transform), 1.f);
+    bbox[6] = toClipSpace * vec4(applyTransform(vec3(min[0], min[1], max[2]), transform), 1.f);
+    bbox[7] = toClipSpace * vec4(applyTransform(vec3(min[0], min[1], min[2]), transform), 1.f);
 
     bvec3 allGt = bvec3(true);
     bvec3 allLt = bvec3(true);

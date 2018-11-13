@@ -318,18 +318,16 @@ int main() {
         lastTime = thisTime;
         time += dt;
 
-        camera.update(window, dt);
-        renderer.setProjection(camera.proj);
-        renderer.setView(camera.view);
-        renderer.setEyePos(camera.pos);
-        renderer.shadowMap.computeProjections(camera, glm::normalize(glm::vec3(-1, -1, 0)));
-
-        meshBuffer.bindVa();
-        group.bind();
         //Rotate
         for(auto o : rotateObjects) {
             o->transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
         }
+
+        camera.update(window, dt);
+        renderer.setCamera(camera);
+
+        meshBuffer.bindVa();
+        group.bind();
 
         renderer.render(time);
 

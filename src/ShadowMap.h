@@ -13,10 +13,15 @@
 
 class ShadowMap {
 public:
+    ShadowMap(ShadowMap&&) = delete;
+    ShadowMap(const ShadowMap&) = delete;
+    ShadowMap& operator=(ShadowMap&&) = delete;
+    ShadowMap& operator=(const ShadowMap&)= delete;
+
     explicit ShadowMap(int resolution, float zNear = -1, float zFar = 1);
     ~ShadowMap();
 
-    void computeProjections(Camera& cam, const glm::vec3& lightdir);
+    void computeProjections(const Camera& cam, const glm::vec3& lightdir);
 
     GLuint tex;
     GLuint dtex;

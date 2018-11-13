@@ -28,6 +28,7 @@ public:
 
     Renderer(int width, int height);
 
+    void setCamera(const Camera& cam);
     void setProjection(const glm::mat4& proj);
     void setView(const glm::mat4& view);
     void setEyePos(const glm::vec3& pos);
@@ -47,6 +48,7 @@ public:
 
     glm::mat4 view;
     glm::mat4 proj;
+    glm::vec3 eyePos;
 
     //Batch batch;
 
@@ -58,12 +60,10 @@ public:
     Shader* dispatchCompute;
     Shader* defaultDepthShader;
 
-    glm::vec3 eyePos;
-
     ShadowMap shadowMap;
     //CSM shadowMap;
 
-    ScenePass defaultPass;
+    ScenePass* scenePass;
 
     std::vector<Pass*> passes;
 
@@ -82,6 +82,8 @@ private:
     Shader* gradeShader;
 
     GLuint LUT;
+
+
 };
 
 

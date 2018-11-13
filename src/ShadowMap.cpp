@@ -7,7 +7,7 @@
 #include <ext/matrix_transform.hpp>
 #include <iostream>
 
-void ShadowMap::computeProjections(Camera &cam, const glm::vec3 &lightdir) {
+void ShadowMap::computeProjections(const Camera &cam, const glm::vec3 &lightdir) {
 
     pass.shadowPass = true;
 

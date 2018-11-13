@@ -10,14 +10,18 @@
 
 Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height) {
 
-    defaultPass.fbo = 0;
-    defaultPass.shadowPass = false;
-    defaultPass.viewportX = 0;
-    defaultPass.viewportY = 0;
-    defaultPass.viewportW = width;
-    defaultPass.viewportH = height;
-    defaultPass.clearBuffers = true;
-    defaultPass.clearColour = glm::vec4(0.7, 0.7, 0.8, 1.0);
+   // createGBuffer();
+
+    scenePass = new ScenePass;
+
+    scenePass->fbo = 0;
+    scenePass->shadowPass = false;
+    scenePass->viewportX = 0;
+    scenePass->viewportY = 0;
+    scenePass->viewportW = width;
+    scenePass->viewportH = height;
+    scenePass->clearBuffers = true;
+    scenePass->clearColour = glm::vec4(0.7, 0.7, 0.8, 1.0);
 
 
     dispatchCompute = new Shader({
@@ -69,7 +73,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
 
     passes.push_back(&shadowMap.pass);
     passes.push_back(&shadowMap.postPass);
-    passes.push_back(&defaultPass);
+    passes.push_back(scenePass);
 
     PostPass* volumetricPass = new PostPass;
     volumetricPass->clearBuffers = true;
@@ -83,8 +87,8 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     volumetricPass->fbo = 0;
     volumetricPass->tex = 0;
 
-    volumetricPass->setup = [this, volumetricPass](){
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("invMat"), glm::inverse(defaultPass.projection * defaultPass.view));
+    volumetricPass->setup = [this, volumetricPass]() {
+        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("invMat"), glm::inverse(proj * view));
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("eyePos"), eyePos);
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("shadowVP"), shadowMap.pass.projection * shadowMap.pass.view);
         glBindTextureUnit(0, shadowMap.btex);
@@ -96,6 +100,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("size"), glm::vec2(this->width, this->height));
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("time"), 0.5f);
     };
+
     passes.push_back(volumetricPass);
 
 
@@ -132,12 +137,12 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
 }
 
 void Renderer::setView(const glm::mat4 &v) {
-    defaultPass.view = v;
+    scenePass->view = v;
     view = v;
 }
 
 void Renderer::setProjection(const glm::mat4 &p) {
-    defaultPass.projection = p;
+    scenePass->projection = p;
     proj = p;
 }
 
@@ -358,6 +363,7 @@ void Renderer::renderPass(Pass *pass) {
         pingPong.swap();
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
     }
+
     glViewport(pass->viewportX, pass->viewportY, pass->viewportW, pass->viewportH);
 
     if (pass->clearBuffers) {
@@ -408,6 +414,13 @@ void Renderer::renderPass(PostPass *postPass) {
         glGenerateTextureMipmap(postPass->dtex);
     }
 
+}
+
+void Renderer::setCamera(const Camera &cam) {
+    setProjection(cam.proj);
+    setView(cam.view);
+    setEyePos(cam.pos);
+    shadowMap.computeProjections(cam, glm::normalize(glm::vec3(-1, -1, 0)));
 }
 
 
