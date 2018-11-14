@@ -67,7 +67,7 @@ int main() {
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
-    window = glfwCreateWindow(1920, 1080, "Grasslands", glfwGetPrimaryMonitor(), NULL);
+    window = glfwCreateWindow(1280, 720, "Grasslands", NULL, NULL);
 
 
     if (!window) {
@@ -87,7 +87,7 @@ int main() {
     glfwSwapInterval(0);
 
     // During init, enable debug output
-    //glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
     glEnable(GL_MULTISAMPLE);
 
@@ -140,8 +140,7 @@ int main() {
     std::string pbr_contText((std::istreambuf_iterator<char>(pbr_contFile)), (std::istreambuf_iterator<char>()));
     std::ifstream pbr_evalFile("../shaders/PBRTessellateEvaluation.glsl");
     std::string pbr_evalText((std::istreambuf_iterator<char>(pbr_evalFile)), (std::istreambuf_iterator<char>()));
-    std::ifstream pbr_fragFile("../shaders/PBRFragment.glsl");
-    std::string pbr_fragText("../shaders/PBRFragment.glsl"_preprocess);
+
 
     /*Shader* pbrTesselateShader = new Shader({
         {GL_VERTEX_SHADER, pbrtess_vertexText},
@@ -150,17 +149,17 @@ int main() {
         {GL_FRAGMENT_SHADER, pbr_fragText}
     });*/
     Shader* pbrShader = new Shader({
-        {GL_VERTEX_SHADER, pbr_vertexText},
-        {GL_FRAGMENT_SHADER, pbr_fragText}
+        {GL_VERTEX_SHADER, "../shaders/PBRVertex.glsl"_preprocess},
+        {GL_FRAGMENT_SHADER, "../shaders/geometryPass.glsl"_preprocess}
     });
 
     MaterialType<MaterialData> pbrType(pbrShader,10);
     //MaterialType<MaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
-    Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM, RockHeight));
-    Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
-    Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight));
-    Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM, MetalHeight));
-    Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM, GroundAlbedo));
+    Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM));
+    Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM));
+    Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM));
+    Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM));
+    Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM));
 
     Material materials[] {
         mat1,mat2,mat3,mat4
@@ -232,6 +231,8 @@ int main() {
         }
     }
 
+
+    /*
     for(int i = 0; i < 30000; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
@@ -273,7 +274,7 @@ int main() {
             objects.emplace_back(thistle, matThistle, t, true);
         }
     }
-
+*/
     std::vector<RenderObject*> rotateObjects;
 
     for(int i = 0; i < 200; i++) {

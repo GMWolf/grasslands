@@ -11,17 +11,15 @@
 #include "glm.hpp"
 
 struct MaterialData {
-    MaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp)
+    MaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram)
     : diffuseTex(diffuse),
       normalTex(normal),
-      RAMTex(ram),
-      dispTex(disp){
+      RAMTex(ram){
     }
 
     glm::ivec2 diffuseTex;
     glm::ivec2 normalTex;
     glm::ivec2 RAMTex;
-    glm::ivec2 dispTex;
 };
 
 

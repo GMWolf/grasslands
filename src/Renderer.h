@@ -69,6 +69,8 @@ public:
 
     PingPong pingPong;
 
+    void createGBuffer();
+
 private:
     void addOctreeNodes(OctreeNode& node);
 
@@ -81,6 +83,18 @@ private:
     Shader* passShader;
     Shader* gradeShader;
 
+    GLuint Gbuffer;
+    union {
+        GLuint textures[4];
+        struct {
+            GLuint albedo;
+            GLuint depth;
+            GLuint normal;
+            GLuint RoughAoMetalic;
+        };
+    };
+    
+    
     GLuint LUT;
 };
 

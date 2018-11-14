@@ -10,11 +10,11 @@
 
 Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height) {
 
-   // createGBuffer();
+    createGBuffer();
 
     scenePass = new ScenePass;
 
-    scenePass->fbo = 0;
+    scenePass->fbo = Gbuffer;
     scenePass->shadowPass = false;
     scenePass->viewportX = 0;
     scenePass->viewportY = 0;
@@ -33,7 +33,6 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         {GL_VERTEX_SHADER, "../shaders/depthVert.glsl"_read},
         {GL_FRAGMENT_SHADER, "../shaders/depthFragment.glsl"_read}
     });
-
 
 
     std::ifstream quadGFile("../shaders/quadGeom.glsl");
@@ -75,6 +74,45 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     passes.push_back(&shadowMap.postPass);
     passes.push_back(scenePass);
 
+
+    Shader* defferedSunLightShader = new Shader({
+        {GL_VERTEX_SHADER, quadVertText},
+        {GL_GEOMETRY_SHADER, quadGText},
+        {GL_FRAGMENT_SHADER, "../shaders/defferedSunLight.glsl"_preprocess}
+    });
+
+    PostPass* defferedSunPass = new PostPass;
+   defferedSunPass->clearBuffers = true;
+   defferedSunPass->shader = defferedSunLightShader;
+   defferedSunPass->clearColour = glm::vec4(0,0,0,1.0);
+   defferedSunPass->generateMipMaps = false;
+   defferedSunPass->viewportX = 0;
+   defferedSunPass->viewportY = 0;
+   defferedSunPass->viewportW = width;
+   defferedSunPass->viewportH = height;
+   defferedSunPass->fbo = 0;
+   defferedSunPass->tex = 0;
+   defferedSunPass->setup = [this, defferedSunLightShader]() {
+       glBindTextureUnit(0, albedo);
+       defferedSunLightShader->setUniform("albedoTex", 0);
+       glBindTextureUnit(1, normal);
+       defferedSunLightShader->setUniform("normalTex", 1);
+       glBindTextureUnit(2, normal);
+       defferedSunLightShader->setUniform("RAMTex", 2);
+       glBindTextureUnit(3, depth);
+       defferedSunLightShader->setUniform("depthTex", 3);
+       glBindTextureUnit(4, shadowMap.btex);
+       defferedSunLightShader->setUniform("shadowMap", 4);
+
+       defferedSunLightShader->setUniform("shadowVP", shadowMap.pass.projection * shadowMap.pass.view);
+       defferedSunLightShader->setUniform("lightColour", glm::vec3(4, 4, 3.25));
+       defferedSunLightShader->setUniform("lightDir", glm::vec3(1, 1, 0));
+       defferedSunLightShader->setUniform("size", glm::vec2(this->width, this->height));
+       defferedSunLightShader->setUniform("invProjMat", glm::inverse(proj));
+   };
+
+    passes.push_back(defferedSunPass);
+
     PostPass* volumetricPass = new PostPass;
     volumetricPass->clearBuffers = true;
     volumetricPass->shader = volumetricShader;
@@ -101,7 +139,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("time"), 0.5f);
     };
 
-    passes.push_back(volumetricPass);
+    //passes.push_back(volumetricPass);
 
 
     //LUT = loadCubeLUT("../LUTs/Neon 770.CUBE");
@@ -127,6 +165,8 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     gradePass->clearBuffers = true;
     gradePass->clearColour = glm::vec4(0,0,0,1);
     gradePass->setup = [this]() {
+        glBindTextureUnit(0, this->pingPong.getTexture());
+        gradeShader->setUniform("tex", 0);
        gradeShader->setUniform("size", glm::vec2(this->width, this->height));
        glBindTextureUnit(1, LUT);
        gradeShader->setUniform("LUT", 1);
@@ -230,11 +270,6 @@ void Renderer::renderBatch(StaticBatch &batch, ScenePass* pass) {
     }
 
     bool inside = !(any(allGt) || any(allLt));
-
-    bool fullInside = (!all(allGt)) && (!all(allLt));
-
-    dispatchCompute->setUniform(1, !fullInside);
-
 
     if(inside) {
         renderBatch(static_cast<Batch&>(batch), pass);
@@ -364,6 +399,9 @@ void Renderer::renderPass(Pass *pass) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
     }
 
+    GLuint attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, attachments);
+
     glViewport(pass->viewportX, pass->viewportY, pass->viewportW, pass->viewportH);
 
     if (pass->clearBuffers) {
@@ -399,7 +437,7 @@ void Renderer::renderPass(PostPass *postPass) {
 
     if (postPass->tex) {
         glBindTextureUnit(0, postPass->tex);
-        postPass->shader->setUniform(postPass->shader->getUniformLocation("tex"), 0);
+        postPass->shader->setUniform("tex", 0);
     }
 
     glDisable(GL_CULL_FACE);
@@ -422,5 +460,34 @@ void Renderer::setCamera(const Camera &cam) {
     setEyePos(cam.pos);
     shadowMap.computeProjections(cam, glm::normalize(glm::vec3(-1, -1, 0)));
 }
+
+void Renderer::createGBuffer() {
+
+    const int samples = 4;
+
+    glGenFramebuffers(1, &Gbuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, Gbuffer);
+
+    glGenTextures(4, textures);
+
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, albedo);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB8, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, albedo, 0);
+
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH_COMPONENT, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth, 0);
+
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, normal);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB16F, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, normal, 0);
+
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, RoughAoMetalic);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB16F, width, height, false);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D_MULTISAMPLE, RoughAoMetalic, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 
 
