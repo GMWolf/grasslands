@@ -82,8 +82,6 @@ private:
     Shader* gradeShader;
 
     GLuint LUT;
-
-
 };
 
 
