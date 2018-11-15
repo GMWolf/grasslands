@@ -10,7 +10,24 @@
 
 Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height) {
 
-   // createGBuffer();
+
+    //Temp light stuff
+    glCreateBuffers(1, &lightBuffer);
+
+    struct {
+        GLuint n = 100, pad0, pad1, pad2;
+        Light light[100];
+    } lightdata;
+    for(int i = 0; i < lightdata.n; i++) {
+        lightdata.light[i].radius = 1;
+        lightdata.light[i].intensity = 1;
+        lightdata.light[i].color = glm::vec3(1, 1, 1);
+        lightdata.light[i].pos = glm::vec3(rand() / (float)RAND_MAX, rand() / (float)RAND_MAX, rand() / (float)RAND_MAX);
+    }
+
+    glNamedBufferStorage(lightBuffer, sizeof(lightdata), &lightdata, 0);
+
+
 
     scenePass = new ScenePass;
 
@@ -101,7 +118,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("time"), 0.5f);
     };
 
-    passes.push_back(volumetricPass);
+    //passes.push_back(volumetricPass);
 
 
     //LUT = loadCubeLUT("../LUTs/Neon 770.CUBE");
@@ -133,7 +150,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
        gradeShader->setUniform("lutSize", 32.0f);
     };
 
-    passes.push_back(gradePass);
+    //passes.push_back(gradePass);
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -200,6 +217,7 @@ void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lightBuffer);
     GLenum prim = pass->shadowPass ? GL_TRIANGLES : batch.matType.primType;
 
     glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);

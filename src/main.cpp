@@ -67,7 +67,7 @@ int main() {
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
-    window = glfwCreateWindow(1920, 1080, "Grasslands", glfwGetPrimaryMonitor(), NULL);
+    window = glfwCreateWindow(1280, 720, "Grasslands", NULL/*glfwGetPrimaryMonitor()*/, NULL);
 
 
     if (!window) {
@@ -232,7 +232,8 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 30000; i++) {
+    /*
+     for(int i = 0; i < 30000; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 0.5f;
@@ -273,7 +274,7 @@ int main() {
             objects.emplace_back(thistle, matThistle, t, true);
         }
     }
-
+*/
     std::vector<RenderObject*> rotateObjects;
 
     for(int i = 0; i < 200; i++) {

@@ -22,6 +22,13 @@
 #include "ShadowMap.h"
 #include "PingPong.h"
 
+struct Light {
+    glm::vec3 pos;
+    float radius;
+    glm::vec3 color;
+    float intensity;
+};
+
 class Renderer {
 
 public:
@@ -70,6 +77,9 @@ public:
     PingPong pingPong;
 
 private:
+
+    GLuint lightBuffer;
+
     void addOctreeNodes(OctreeNode& node);
 
     int width, height;

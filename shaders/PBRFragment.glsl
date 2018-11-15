@@ -8,6 +8,11 @@ struct material {
     ivec2 disp;
 };
 
+struct Light {
+  vec4 posRad;
+  vec4 colorI;
+};
+
 
 layout(std430, binding = 1) buffer MaterialIndexBuffer {
     uint materialIndex[];
@@ -15,6 +20,11 @@ layout(std430, binding = 1) buffer MaterialIndexBuffer {
 
 layout(std430, binding = 2) buffer MaterialDataBuffer {
     material materials[];
+};
+
+layout(std430, binding = 3) buffer LightDataBuffer {
+  uint lightCount, pad0, pad1, pad2;
+  Light lights[];
 };
 
 uniform sampler2DArray tex[8];
@@ -32,7 +42,7 @@ in Vertex {
     flat uint drawID;
     vec2 texcoord;
     vec3 viewVector;
-    noperspective vec3 worldPos;
+    vec3 worldPos;
 } IN;
 
 out vec4 outColor;
@@ -43,6 +53,29 @@ out vec4 outColor;
 
 vec4 matTexture(ivec2 t, vec2 texcoord) {
     return texture(tex[t.x], vec3(texcoord, t.y));
+}
+
+
+vec3 computeLight(vec3 L, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness, float metalic, vec3 colour, float intensity) {
+
+    vec3 H = normalize(L + V);
+
+    vec3 F = fresnel(max(dot(H, V), 0.0), F0);
+    float NDF = D_GGX(N, H, roughness);
+    float G = G_smith(N, V, L, roughness);
+
+    vec3 numerator = NDF * G * F;
+
+    float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+    vec3 specular = numerator / max(denom, 0.001);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metalic;
+
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 radiance = colour * intensity;
+    return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
 void main()
@@ -64,34 +97,31 @@ void main()
 
     vec3 L = normalize(lightDir);
 
-    vec3 H = normalize(L + V);
-
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metalic);
-    vec3 F = fresnel(max(dot(H, V), 0.0), F0);
 
-    float NDF = D_GGX(N, H, roughness);
-    float G = G_smith(N, V, L, roughness);
+    //do directional light
+    float shadow = shadowIntensity(IN.worldPos + IN.normal * 0.001);
+    vec3 lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, metalic, lightColour, shadow);
+    lightAccumulation = vec3(0,0,0);
+    //do all other lights
+    for(uint i = 0; i < lightCount; i++) {
+        Light l = lights[i];
+        L = IN.worldPos - l.posRad.xyz;
+        L = -L;
+        float intensity = l.colorI.w * (max(l.posRad.w - length(L), 0.0f) / l.posRad.w);
+        L = normalize(L);
+        lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, metalic, l.colorI.xyz, l.colorI.w);
+    }
+    /*Light l = lights;
+    L = IN.worldPos - l.posRad.xyz;
+    L *= -1;
+    float intensity = l.colorI.w * (max(l.posRad.w - length(L), 0.0f) / l.posRad.w);
+    L = normalize(L);
+    lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, metalic, l.colorI.xyz, intensity);*/
 
-    vec3 numerator = NDF * G * F;
+    //lightAccumulation += l.colorI.w * l.colorI.xyz;
 
-    float denom = 4.0 * max(dot(N,V), 0.0)*max(dot(N,L), 0.0);
-    vec3 specular = numerator / max(denom, 0.001);
-
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metalic;
-
-    float NdotL = max(dot(N, L), 0.0);
-
-    vec3 radiance = lightColour;
-    vec3 light = (kD * albedo / PI + specular)  * radiance  * NdotL;
-
-    vec3 ambient = vec3(0.25) * albedo * AO;
-
-
-    light *= shadowIntensity(IN.worldPos + IN.normal * 0.001);
-
-
-    outColor = vec4(light + ambient, 1.0);
+    vec3 ambient = vec3(0.05) * albedo * AO;
+    outColor = vec4(lightAccumulation + ambient, 1.0);
 }
