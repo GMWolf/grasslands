@@ -43,7 +43,7 @@ void main() {
 
     float camDist = length(d);
 
-    d /= camDist;
+    normalize(d);
 
     float stepl = (30.0f / SAMPLES);
     vec3 step = d * stepl;

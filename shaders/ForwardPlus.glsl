@@ -1,6 +1,6 @@
 struct TileLightData {
     uint lightCount;
-    int visibleLightIndex[128];
+    int visibleLightIndex[16];
 };
 
 struct Light {

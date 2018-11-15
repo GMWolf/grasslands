@@ -23,7 +23,7 @@ layout(std430, binding = 0) readonly buffer LightDataBuffer {
 
 struct TileLightData {
     uint lightCount;
-    int visibleLightIndex[128];
+    int visibleLightIndex[16];
 };
 
 layout(std430, binding = 1) writeonly buffer VisibleLightBuffer {

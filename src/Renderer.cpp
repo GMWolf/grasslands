@@ -30,7 +30,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     glNamedBufferStorage(lightBuffer, sizeof(lightdata), &lightdata, 0);
     GLuint tileCount = (((width + 15) / 16) * ((height + 15) / 16));
     std::cout << "tile count" << tileCount << std::endl;
-    glNamedBufferStorage(lightIndexBuffer, tileCount * ((128 * sizeof(GLuint)) + sizeof(GLuint)), nullptr, 0);
+    glNamedBufferStorage(lightIndexBuffer, tileCount * ((16 * sizeof(GLuint)) + sizeof(GLuint)), nullptr, 0);
     //glNamedBufferStorage(lightStartEndBuffer, tileCount  * 2 * sizeof(GLuint), nullptr, 0);
 
     lightCullShader = new Shader({
@@ -349,7 +349,7 @@ void Renderer::render(float time) {
     volumetricShader->setUniform("invMat", glm::inverse(proj * view));
     volumetricShader->setUniform("eyePos", eyePos);
     volumetricShader->setUniform("shadowVP", shadowMap.projection * shadowMap.view);
-    glBindTextureUnit(0, shadowMap.btex);
+    glBindTextureUnit(0, shadowMap.tex);
     volumetricShader->setUniform("shadowMap", 0);
     glBindTextureUnit(1, pingPong.getBackTexture());
     volumetricShader->setUniform("inColour", 1);
