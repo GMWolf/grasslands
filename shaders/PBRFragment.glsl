@@ -128,12 +128,5 @@ void main()
     vec3 ambient = vec3(0.05) * albedo * AO;
     outColor = vec4(lightAccumulation + ambient, 1.0);
 
-
-
-
-    if (showLightDebug) {
-        outColor.xyz = vec3(tileData[tileIndex].lightCount / 16.0f ) ;
-    }
-
    // outColor.xyz = vec3(tileIndex/ 5500.0f ) ;
 }

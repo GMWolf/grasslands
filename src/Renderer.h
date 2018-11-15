@@ -100,6 +100,7 @@ private:
     Shader* passShader;
     Shader* gradeShader;
     Shader* lightCullShader;
+    Shader* lightDebugShader;
 
     GLuint LUT;
 

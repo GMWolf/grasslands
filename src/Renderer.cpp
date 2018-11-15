@@ -95,6 +95,13 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
             {GL_FRAGMENT_SHADER, "../shaders/grade.glsl"_preprocess}
     });
 
+
+    lightDebugShader = new Shader({
+        {GL_VERTEX_SHADER, quadVertText},
+        {GL_GEOMETRY_SHADER, quadGText},
+        {GL_FRAGMENT_SHADER, "../shaders/lightDebug.glsl"_preprocess}
+    });
+
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -157,7 +164,6 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
     shader->setUniform("time", time);
 
     shader->setUniform("tileCountX", (GLuint)((width + 15) / 16));
-    shader->setUniform("showLightDebug", showLightDebug);
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
@@ -370,7 +376,6 @@ void Renderer::render(float time) {
     gradeShader->setUniform("lutSize", 32.0f);
     renderQuad();
 
-
     //Push to screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0,0,0,1.0);
@@ -383,6 +388,15 @@ void Renderer::render(float time) {
     passShader->setUniform(passShader->getUniformLocation("size"), glm::vec2(width, height));
 
     renderQuad();
+
+
+    if (showLightDebug) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        lightDebugShader->use();
+        lightDebugShader->setUniform("tileCountX", (GLuint)((width + 15) / 16));
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightIndexBuffer);
+        renderQuad();
+    }
 }
 
 

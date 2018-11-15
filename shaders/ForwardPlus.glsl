@@ -9,4 +9,3 @@ struct Light {
 };
 
 uniform uint tileCountX;
-uniform bool showLightDebug;
