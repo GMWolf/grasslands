@@ -16,21 +16,21 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     //glCreateBuffers(1, &lightStartEndBuffer);
 
     struct {
-        GLuint n = 10, pad0, pad1, pad2;
-        Light light[10];
+        GLuint n = 1000, pad0, pad1, pad2;
+        Light light[1000];
     } lightdata;
     for(int i = 0; i < lightdata.n; i++) {
         lightdata.light[i].radius = 5;
-        lightdata.light[i].intensity = 1.5;
+        lightdata.light[i].intensity = 10;
         lightdata.light[i].color = glm::vec3(1, 1, 1);
-        //lightdata.light[i].pos = (glm::vec3(rand() / (float)RAND_MAX - 0.5f, 0, rand() / (float)RAND_MAX - 0.5f) ) * 200.f;
-        lightdata.light[i].pos = glm::vec3(0, 0.5, 0);
+        lightdata.light[i].pos = (glm::vec3(rand() / (float)RAND_MAX - 0.5f, 0, rand() / (float)RAND_MAX - 0.5f) ) * 200.f;
+        lightdata.light[i].pos += glm::vec3(0, 0.5, 0);
     }
 
     glNamedBufferStorage(lightBuffer, sizeof(lightdata), &lightdata, 0);
     GLuint tileCount = (((width + 15) / 16) * ((height + 15) / 16));
     std::cout << "tile count" << tileCount << std::endl;
-    glNamedBufferStorage(lightIndexBuffer, tileCount * ((16 * sizeof(GLuint)) + sizeof(GLuint)), nullptr, 0);
+    glNamedBufferStorage(lightIndexBuffer, tileCount * ((128 * sizeof(GLuint)) + sizeof(GLuint)), nullptr, 0);
     //glNamedBufferStorage(lightStartEndBuffer, tileCount  * 2 * sizeof(GLuint), nullptr, 0);
 
     lightCullShader = new Shader({
@@ -98,12 +98,10 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
 }
 
 void Renderer::setView(const glm::mat4 &v) {
-    scenePass->view = v;
     view = v;
 }
 
 void Renderer::setProjection(const glm::mat4 &p) {
-    scenePass->projection = p;
     proj = p;
 }
 
@@ -197,8 +195,6 @@ void Renderer::renderBatch(StaticBatch &batch, PassInfo& pass) {
     }
 
     bool inside = !(any(allGt) || any(allLt));
-
-    bool fullInside = (!all(allGt)) && (!all(allLt));
 
 
     if(inside) {
@@ -297,6 +293,7 @@ void Renderer::render(float time) {
     PassInfo depthPassInfo;
     depthPassInfo.view = view;
     depthPassInfo.projection = proj;
+    depthPassInfo.mask = PASS_SHADOW;
 
     pingPong.swap();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
@@ -306,8 +303,20 @@ void Renderer::render(float time) {
     renderBatches(depthPassInfo);
     glColorMask(true, true, true, true);
 
-    //DO light culling
+    glTextureBarrier();
 
+    //DO light culling
+    lightCullShader->use();
+    glBindTextureUnit(0, pingPong.getDepth());
+    lightCullShader->setUniform("depthMap", 0);
+    lightCullShader->setUniform("projection", proj);
+    lightCullShader->setUniform("viewProj", proj * view);
+    lightCullShader->setUniform("view", view);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lightIndexBuffer);
+    glDispatchCompute((width + 15) / 16, (height + 15) / 16, 1);
+
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 
     //SHADOWS

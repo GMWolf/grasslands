@@ -9,7 +9,7 @@ PingPong::PingPong(int width, int height) {
     const int samples = 4;
 
     glGenFramebuffers(1, &fboA);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboA);
+    glBindFramebuffer(GL_FRAMEBUFFER, fboA);
     glGenTextures(1, &dTexA);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, dTexA);
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH_COMPONENT, width, height, false);
@@ -22,7 +22,7 @@ PingPong::PingPong(int width, int height) {
 
 
     glGenFramebuffers(1, &fboB);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboB);
+    glBindFramebuffer(GL_FRAMEBUFFER, fboB);
     glGenTextures(1, &dTexB);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, dTexB);
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH_COMPONENT, width, height, false);

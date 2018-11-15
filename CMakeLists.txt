@@ -16,6 +16,6 @@ include_directories(glm)
 include_directories(glad/include)
 
 add_executable(grasslands glad/src/glad.c src/main.cpp src/Mesh.cpp src/Mesh.h src/glTypes.h src/ObjLoader.cpp src/ObjLoader.h src/DDSLoad.h src/DDSLoad.cpp
-        src/Shader.h src/Shader.cpp src/Renderer.cpp src/Renderer.h src/Texture.cpp src/Texture.h src/Transform.h src/RenderObject.cpp src/RenderObject.h src/Camera.cpp src/Camera.h src/Octree.cpp src/Octree.h src/Material.h src/BVH.cpp src/BVH.h src/Batch.cpp src/Batch.h src/SETTINGS.h src/Material.cpp src/ShadowMap.cpp src/ShadowMap.h src/Pass.cpp src/Pass.h src/PingPong.cpp src/PingPong.h src/CUBELoader.cpp src/CUBELoader.h)
+        src/Shader.h src/Shader.cpp src/Renderer.cpp src/Renderer.h src/Texture.cpp src/Texture.h src/Transform.h src/RenderObject.cpp src/RenderObject.h src/Camera.cpp src/Camera.h src/Octree.cpp src/Octree.h src/Material.h src/BVH.cpp src/BVH.h src/Batch.cpp src/Batch.h src/SETTINGS.h src/Material.cpp src/ShadowMap.cpp src/ShadowMap.h src/PingPong.cpp src/PingPong.h src/CUBELoader.cpp src/CUBELoader.h)
 
 target_link_libraries(grasslands glfw)

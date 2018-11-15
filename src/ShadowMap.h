@@ -9,7 +9,6 @@
 #include "glm.hpp"
 #include "Camera.h"
 #include <vector>
-#include "Pass.h"
 
 class ShadowMap {
 public:

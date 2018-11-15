@@ -29,7 +29,7 @@ layout(std430, binding = 3) buffer LightDataBuffer {
 
 struct TileLightData {
     uint lightCount;
-    int visibleLightIndex[16];
+    int visibleLightIndex[128];
 };
 
 layout(std430, binding = 4) readonly buffer VisibleLightBuffer {
@@ -114,29 +114,27 @@ void main()
     vec3 lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, metalic, lightColour, shadow);
     //lightAccumulation = vec3(0,0,0);
     //do all other lights
-    for(uint i = 0; i < lightCount; i++) {
-        Light l = lights[i];
+
+    ivec2 tilePos = ivec2(gl_FragCoord.xy) / ivec2(16,16);
+    uint tileIndex = tilePos.y * (tileCountX) + tilePos.x;
+
+    TileLightData tld = tileData[tileIndex];
+
+    for(uint i = 0; i < tld.lightCount; i++) {
+        Light l = lights[tld.visibleLightIndex[i]];
         L = IN.worldPos - l.posRad.xyz;
         L = -L;
         float intensity = l.colorI.w * (max(l.posRad.w - length(L), 0.0f) / l.posRad.w);
         L = normalize(L);
         lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, metalic, l.colorI.xyz, intensity);
     }
-    /*Light l = lights;
-    L = IN.worldPos - l.posRad.xyz;
-    L *= -1;
-    float intensity = l.colorI.w * (max(l.posRad.w - length(L), 0.0f) / l.posRad.w);
-    L = normalize(L);
-    lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, metalic, l.colorI.xyz, intensity);*/
 
-    //lightAccumulation += l.colorI.w * l.colorI.xyz;
 
     vec3 ambient = vec3(0.05) * albedo * AO;
     outColor = vec4(lightAccumulation + ambient, 1.0);
 
 
-    ivec2 tilePos = ivec2(gl_FragCoord.xy) / ivec2(16,16);
-    uint tileIndex = tilePos.y * (tileCountX) + tilePos.x;
+
 
     if (showLightDebug) {
         outColor.xyz = vec3(tileData[tileIndex].lightCount / 16.0f ) ;

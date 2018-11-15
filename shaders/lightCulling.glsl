@@ -23,7 +23,7 @@ layout(std430, binding = 0) readonly buffer LightDataBuffer {
 
 struct TileLightData {
     uint lightCount;
-    int visibleLightIndex[16];
+    int visibleLightIndex[128];
 };
 
 layout(std430, binding = 1) writeonly buffer VisibleLightBuffer {
@@ -103,7 +103,7 @@ void main() {
 
         if (inside) {
             uint offset = atomicAdd(tileData[tileIndex].lightCount, 1);
-            //tileData[tileIndex].visibleLightIndex[offset] = int(lightIndex);
+            tileData[tileIndex].visibleLightIndex[offset] = int(lightIndex);
         }
 
     }

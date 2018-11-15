@@ -82,10 +82,6 @@ public:
     ShadowMap shadowMap;
     //CSM shadowMap;
 
-    ScenePass* scenePass;
-
-    std::vector<Pass*> passes;
-
     PingPong pingPong;
 
 
