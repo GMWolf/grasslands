@@ -20,7 +20,7 @@ uniform vec2 size;
 
 uniform float time;
 
-#define SAMPLES 512
+#define SAMPLES 256
 
 #include "../shaders/shadow.glsl"
 
@@ -43,7 +43,7 @@ void main() {
 
     float camDist = length(d);
 
-    d = normalize(d);
+    d /= camDist;
 
     float stepl = (30.0f / SAMPLES);
     vec3 step = d * stepl;

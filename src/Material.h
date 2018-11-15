@@ -44,7 +44,7 @@ public:
     Material addMaterial(void* data);
 
     Shader* depthShaderOverride = nullptr;
-    bool castShadow = true;
+    int mask = ~0;
 private:
     GLenum primType;
     GLuint nextID = 0;

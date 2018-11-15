@@ -9,8 +9,6 @@
 
 void ShadowMap::computeProjections(const Camera &cam, const glm::vec3 &lightdir) {
 
-    pass.shadowPass = true;
-
     glm::mat4 invViewProj = glm::inverse(cam.proj * cam.view);
 
     //get view corners
@@ -32,7 +30,7 @@ void ShadowMap::computeProjections(const Camera &cam, const glm::vec3 &lightdir)
     //compute view
     glm::vec3 lightPos = centroid - (lightdir *cam.farPlane);
 
-    pass.view = glm::lookAt(lightPos, centroid, glm::normalize(glm::cross(glm::normalize(glm::cross(lightdir, glm::vec3(0,1,0))), lightdir)));
+    view = glm::lookAt(lightPos, centroid, glm::normalize(glm::cross(glm::normalize(glm::cross(lightdir, glm::vec3(0,1,0))), lightdir)));
 
 
     //get min max
@@ -40,28 +38,16 @@ void ShadowMap::computeProjections(const Camera &cam, const glm::vec3 &lightdir)
     glm::vec3 max(-std::numeric_limits<float>::max());
 
     for(glm::vec4& c : corners) {
-        glm::vec3 p = glm::vec3(pass.view * c);
+        glm::vec3 p = glm::vec3(view * c);
         min = glm::min(min, p);
         max = glm::max(max, p);
     }
 
-    pass.projection = glm::ortho(min.x, max.x, min.y, max.y, 0.01f, -min.z);
+    projection = glm::ortho(min.x, max.x, min.y, max.y, 0.01f, -min.z);
 
 }
 
 ShadowMap::ShadowMap(int resolution, float zNear, float zFar) : zNear(zNear), zFar(zFar), resolution(resolution) {
-
-    pass.viewportW = resolution;
-    pass.viewportH = resolution;
-    pass.viewportX = 0;
-    pass.viewportY = 0;
-
-    postPass.viewportW = resolution;
-    postPass.viewportH = resolution;
-    postPass.viewportX = 0;
-    postPass.viewportY = 0;
-    postPass.clearBuffers = true;
-    postPass.clearColour = glm::vec4(0,0,0,0);
 
 
     /*glCreateFramebuffers(1, &fbo);
@@ -82,8 +68,8 @@ ShadowMap::ShadowMap(int resolution, float zNear, float zFar) : zNear(zNear), zF
 
     glNamedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, tex, 0);*/
 
-    glGenFramebuffers(1, &pass.fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pass.fbo);
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
     glGenTextures(1, &dtex);
     glBindTexture(GL_TEXTURE_2D, dtex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
@@ -99,8 +85,8 @@ ShadowMap::ShadowMap(int resolution, float zNear, float zFar) : zNear(zNear), zF
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
 
 
-    glGenFramebuffers(1, &postPass.fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postPass.fbo);
+    glGenFramebuffers(1, &bfbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, bfbo);
 
     glGenTextures(1, &btex);
     glBindTexture(GL_TEXTURE_2D, btex);
@@ -111,9 +97,6 @@ ShadowMap::ShadowMap(int resolution, float zNear, float zFar) : zNear(zNear), zF
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, btex, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    postPass.tex = tex;
-    postPass.dtex = btex;
 }
 
 ShadowMap::~ShadowMap() {

@@ -112,7 +112,7 @@ void main()
     //do directional light
     float shadow = shadowIntensity(IN.worldPos + IN.normal * 0.001);
     vec3 lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, metalic, lightColour, shadow);
-    lightAccumulation = vec3(0,0,0);
+    //lightAccumulation = vec3(0,0,0);
     //do all other lights
     for(uint i = 0; i < lightCount; i++) {
         Light l = lights[i];

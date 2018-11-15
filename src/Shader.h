@@ -47,7 +47,7 @@ public:
         return compiled;
     }
 
-private:
+//private:
     static bool testShader(GLuint shader);
 
     static bool testLink(GLuint program);

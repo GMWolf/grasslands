@@ -22,11 +22,23 @@
 #include "ShadowMap.h"
 #include "PingPong.h"
 
+#define PASS_ALL ~0
+#define PASS_DEFAULT 1
+#define PASS_SHADOW 2
+
 struct Light {
     glm::vec3 pos;
     float radius;
     glm::vec3 color;
     float intensity;
+};
+
+struct PassInfo {
+    glm::mat4 projection;
+    glm::mat4 view;
+
+    Shader* shaderOverride = nullptr;
+    int mask = ~0;
 };
 
 class Renderer {
@@ -42,15 +54,14 @@ public:
 
     void render(float time);
 
-    void renderPass(Pass* pass);
-    void renderPass(ScenePass* pass);
-    void renderPass(PostPass* postPass);
-    void renderPass(ComputePass* computePass);
+    void renderBatch(Batch& batch, PassInfo& pass);
+    void renderBatch(StaticBatch& batch, PassInfo& pass);
+    void renderBatch(DynamicBatch& batch, PassInfo& pass);
+    void renderBatches(PassInfo& pass);
+    void renderQuad();
 
-    void renderBatch(Batch& batch, ScenePass* pass);
-    void renderBatch(StaticBatch& batch, ScenePass* pass);
-    void renderBatch(DynamicBatch& batch, ScenePass* pass);
 
+    void shadowPass();
 
     int numObject = 0;
 

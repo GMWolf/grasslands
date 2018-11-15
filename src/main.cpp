@@ -87,7 +87,7 @@ int main() {
     glfwSwapInterval(0);
 
     // During init, enable debug output
-    //glEnable(GL_DEBUG_OUTPUT);
+   // glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
     glEnable(GL_MULTISAMPLE);
 
@@ -194,7 +194,7 @@ int main() {
 
     MaterialType<GrassMatData> grassType(grassShader, 10);
     grassType.depthShaderOverride = grassShadowShader;
-    grassType.castShadow = false;
+    grassType.mask = ~PASS_SHADOW;
     Material matGrass12 = grassType.addMaterial({grass12Albedo, grass12Normal, grass12RA, grass12Tr});
     Material matWeed11  = grassType.addMaterial({weed11Albedo, weed11Normal, weed11RA, weed11Tr});
     Material matThistle = grassType.addMaterial({thistle17Albedo, thistle17Normal, thistle17RA, thistle17Tr});

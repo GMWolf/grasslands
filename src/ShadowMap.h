@@ -33,8 +33,10 @@ public:
 
     int resolution;
 
-    ScenePass pass;
-    PostPass postPass;
+    GLuint fbo;
+    GLuint bfbo;
+
+    glm::mat4 view, projection;
 };
 
 class CSM {

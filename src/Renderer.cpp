@@ -37,50 +37,16 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
             {GL_COMPUTE_SHADER, "../shaders/lightCulling.glsl"_preprocess}
     });
 
-    ComputePass* lightCullPass = new ComputePass;
-    lightCullPass->shader = lightCullShader;
-    lightCullPass->x = (width + 15) / 16;
-    lightCullPass->y = (height + 15) / 16;
-    lightCullPass->z = 1;
-    lightCullPass->barrier = GL_ALL_BARRIER_BITS;
-    lightCullPass->setup=[this](){
-        //do light culling
-        lightCullShader->use();
-        lightCullShader->setUniform("depthMap", 0);
-        lightCullShader->setUniform("projection", proj);
-        lightCullShader->setUniform("viewProj", proj * view);
-        lightCullShader->setUniform("view", view);
-
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lightIndexBuffer);
-    };
-
-    passes.push_back(lightCullPass);
-
-
-    scenePass = new ScenePass;
-
-    scenePass->fbo = 0;
-    scenePass->shadowPass = false;
-    scenePass->viewportX = 0;
-    scenePass->viewportY = 0;
-    scenePass->viewportW = width;
-    scenePass->viewportH = height;
-    scenePass->clearBuffers = true;
-    scenePass->clearColour = glm::vec4(0.7, 0.7, 0.8, 1.0);
-
 
     dispatchCompute = new Shader({
-        {GL_COMPUTE_SHADER, "../shaders/dispatchGeom.glsl"_read}
+        {GL_COMPUTE_SHADER, "../shaders/dispatchGeom.glsl"_preprocess}
     });
 
 
     defaultDepthShader = new Shader({
-        {GL_VERTEX_SHADER, "../shaders/depthVert.glsl"_read},
-        {GL_FRAGMENT_SHADER, "../shaders/depthFragment.glsl"_read}
+        {GL_VERTEX_SHADER, "../shaders/depthVert.glsl"_preprocess},
+        {GL_FRAGMENT_SHADER, "../shaders/depthFragment.glsl"_preprocess}
     });
-
-
 
     std::ifstream quadGFile("../shaders/quadGeom.glsl");
     std::string quadGText((std::istreambuf_iterator<char>(quadGFile)), (std::istreambuf_iterator<char>()));
@@ -100,10 +66,9 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     boxShader = new Shader({
         {GL_VERTEX_SHADER, quadVertText},
         {GL_GEOMETRY_SHADER, quadGText},
-        {GL_FRAGMENT_SHADER, "../shaders/boxFilterFrag.glsl"_read}
+        {GL_FRAGMENT_SHADER, "../shaders/boxFilterFrag.glsl"_preprocess}
     });
 
-    shadowMap.postPass.shader = boxShader;
 
     volumetricShader = new Shader({
         {GL_VERTEX_SHADER, quadVertText},
@@ -117,37 +82,7 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         {GL_FRAGMENT_SHADER, "../shaders/passthrough.glsl"_preprocess}
     });
 
-    passes.push_back(&shadowMap.pass);
-    passes.push_back(&shadowMap.postPass);
-    passes.push_back(scenePass);
 
-    PostPass* volumetricPass = new PostPass;
-    volumetricPass->clearBuffers = true;
-    volumetricPass->shader = volumetricShader;
-    volumetricPass->clearColour = glm::vec4(0,0,0,1.0);
-    volumetricPass->generateMipMaps = false;
-    volumetricPass->viewportX = 0;
-    volumetricPass->viewportY = 0;
-    volumetricPass->viewportW = width;
-    volumetricPass->viewportH = height;
-    volumetricPass->fbo = 0;
-    volumetricPass->tex = 0;
-
-    volumetricPass->setup = [this, volumetricPass]() {
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("invMat"), glm::inverse(proj * view));
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("eyePos"), eyePos);
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("shadowVP"), shadowMap.pass.projection * shadowMap.pass.view);
-        glBindTextureUnit(0, shadowMap.btex);
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("shadowMap"), 0);
-        glBindTextureUnit(1, pingPong.getTexture());
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("inColour"), 1);
-        glBindTextureUnit(2, pingPong.getDepth());
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("depthMap"), 2);
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("size"), glm::vec2(this->width, this->height));
-        volumetricPass->shader->setUniform(volumetricShader->getUniformLocation("time"), 0.5f);
-    };
-
-    //passes.push_back(volumetricPass);
 
 
     //LUT = loadCubeLUT("../LUTs/Neon 770.CUBE");
@@ -160,26 +95,6 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
             {GL_FRAGMENT_SHADER, "../shaders/grade.glsl"_preprocess}
     });
 
-
-    PostPass* gradePass = new PostPass;
-    gradePass->tex = 0;
-    gradePass->fbo = 0;
-    gradePass->shader = gradeShader;
-    gradePass->viewportX = 0;
-    gradePass->viewportY = 0;
-    gradePass->viewportW = width;
-    gradePass->viewportH = height;
-    gradePass->generateMipMaps = false;
-    gradePass->clearBuffers = true;
-    gradePass->clearColour = glm::vec4(0,0,0,1);
-    gradePass->setup = [this]() {
-       gradeShader->setUniform("size", glm::vec2(this->width, this->height));
-       glBindTextureUnit(1, LUT);
-       gradeShader->setUniform("LUT", 1);
-       gradeShader->setUniform("lutSize", 32.0f);
-    };
-
-    //passes.push_back(gradePass);
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -196,15 +111,15 @@ void Renderer::setEyePos(const glm::vec3 &pos) {
     eyePos = pos;
 }
 
-void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
+void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
 
-    if(pass->shadowPass && !batch.matType.castShadow) {
+    if(!(pass.mask & batch.matType.mask)) {
         return;
     }
 
     dispatchCompute->use();
 
-    dispatchCompute->setUniform(0, pass->projection * pass->view);
+    dispatchCompute->setUniform(0, pass.projection * pass.view);
 
     //GPU Culling
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.meshBuffer.meshDataBuffer);
@@ -218,32 +133,33 @@ void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
 
     //render indirect
     Shader* shader;
-    if (pass->shadowPass) {
+    if (pass.mask == PASS_SHADOW) {
         shader = batch.matType.depthShaderOverride ? batch.matType.depthShaderOverride : defaultDepthShader;
     } else {
         shader = batch.matType.shader;
     }
+
     shader->use();
+
     static const std::vector<int> tsamplers {
             0, 1//, 2, 3, 4, 5, 6, 7
     };
 
     glBindTextureUnit(9, shadowMap.btex);
-    shader->setUniform(shader->getUniformLocation("projection"), pass->projection);
-    shader->setUniform(shader->getUniformLocation("MV"), pass->projection * pass->view);
-    shader->setUniform(shader->getUniformLocation("tex"), tsamplers);
+    shader->setUniform("projection", pass.projection);
+    shader->setUniform("MV", pass.projection * pass.view);
+    shader->setUniform("tex", tsamplers);
 
-    shader->setUniform(shader->getUniformLocation("eyePos"), eyePos);
-    shader->setUniform(shader->getUniformLocation("lightColour"), glm::vec3(4, 4, 3.25));
-    shader->setUniform(shader->getUniformLocation("lightDir"), glm::vec3(1, 1, 0));
+    shader->setUniform("eyePos", eyePos);
+    shader->setUniform("lightColour", glm::vec3(4, 4, 3.25));
+    shader->setUniform("lightDir", glm::vec3(1, 1, 0));
 
-    shader->setUniform(shader->getUniformLocation("shadowMap"), 9);
-    shader->setUniform(shader->getUniformLocation("shadowVP"),shadowMap.pass.projection * shadowMap.pass.view);
+    shader->setUniform("shadowMap", 9);
+    shader->setUniform("shadowVP",shadowMap.projection * shadowMap.view);
     shader->setUniform("time", time);
 
     shader->setUniform("tileCountX", (GLuint)((width + 15) / 16));
     shader->setUniform("showLightDebug", showLightDebug);
-
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
@@ -251,14 +167,14 @@ void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lightBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightIndexBuffer);
-    GLenum prim = pass->shadowPass ? GL_TRIANGLES : batch.matType.primType;
+    GLenum prim = batch.matType.primType;
 
     glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
 }
 
-void Renderer::renderBatch(StaticBatch &batch, ScenePass* pass) {
+void Renderer::renderBatch(StaticBatch &batch, PassInfo& pass) {
 
-    glm::mat4 viewproj = pass->projection * pass->view;
+    glm::mat4 viewproj = pass.projection * pass.view;
 
     glm::vec4 corners[8];
     corners[0] = viewproj * glm::vec4(batch.min[0], batch.max[1], batch.min[2], 1.f);
@@ -284,8 +200,6 @@ void Renderer::renderBatch(StaticBatch &batch, ScenePass* pass) {
 
     bool fullInside = (!all(allGt)) && (!all(allLt));
 
-    dispatchCompute->setUniform(1, !fullInside);
-
 
     if(inside) {
         renderBatch(static_cast<Batch&>(batch), pass);
@@ -293,7 +207,7 @@ void Renderer::renderBatch(StaticBatch &batch, ScenePass* pass) {
 
 }
 
-void Renderer::renderBatch(DynamicBatch &batch, ScenePass* pass) {
+void Renderer::renderBatch(DynamicBatch &batch, PassInfo& pass) {
 
     //wait on fence
     if(batch.fence[batch.bufferIndex]) {
@@ -378,10 +292,70 @@ void Renderer::render(float time) {
 
     this->time = time;
 
-    for(auto p : passes) {
-        renderPass((Pass*) p);
-    }
 
+    //Do first depth pass
+    PassInfo depthPassInfo;
+    depthPassInfo.view = view;
+    depthPassInfo.projection = proj;
+
+    pingPong.swap();
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    glClearDepth(1);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glColorMask(false, false, false, false);
+    renderBatches(depthPassInfo);
+    glColorMask(true, true, true, true);
+
+    //DO light culling
+
+
+
+    //SHADOWS
+    shadowPass();
+
+    //SCENE PASS
+    pingPong.swap();
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    glClearDepth(1);
+    glClearColor(0.7, 0.7, 1.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0,0, width, height);
+    PassInfo scenePass;
+    scenePass.view = view;
+    scenePass.projection = proj;
+    renderBatches(scenePass);
+
+
+    //Volumetric light pass
+    pingPong.swap();
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    volumetricShader->use();
+    volumetricShader->setUniform("invMat", glm::inverse(proj * view));
+    volumetricShader->setUniform("eyePos", eyePos);
+    volumetricShader->setUniform("shadowVP", shadowMap.projection * shadowMap.view);
+    glBindTextureUnit(0, shadowMap.btex);
+    volumetricShader->setUniform("shadowMap", 0);
+    glBindTextureUnit(1, pingPong.getBackTexture());
+    volumetricShader->setUniform("inColour", 1);
+    glBindTextureUnit(2, pingPong.getBackDepth());
+    volumetricShader->setUniform("depthMap", 2);
+    volumetricShader->setUniform("size", glm::vec2(width,height));
+    renderQuad();
+
+    //Color correct pass
+    pingPong.swap();
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    gradeShader->use();
+    gradeShader->setUniform("size", glm::vec2(this->width, this->height));
+    glBindTextureUnit(0, pingPong.getBackTexture());
+    gradeShader->setUniform("tex", 0);
+    glBindTextureUnit(1, LUT);
+    gradeShader->setUniform("LUT", 1);
+    gradeShader->setUniform("lutSize", 32.0f);
+    renderQuad();
+
+
+    //Push to screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0,0,0,1.0);
     glClearDepth(1);
@@ -392,16 +366,41 @@ void Renderer::render(float time) {
     passShader->setUniform(passShader->getUniformLocation("tex"), 0);
     passShader->setUniform(passShader->getUniformLocation("size"), glm::vec2(width, height));
 
-
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glDrawArrays(GL_POINTS, 0, 1);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
+    renderQuad();
 }
 
+
+void Renderer::shadowPass() {
+    //Do shadow pass
+    PassInfo passInfo;
+    passInfo.mask = PASS_SHADOW;
+    passInfo.projection = shadowMap.projection;
+    passInfo.view = shadowMap.view;
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.fbo);
+    glClearColor(0,0,0,1);
+    glClearDepth(1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0,0, 2048, 2048);
+    renderBatches(passInfo);
+
+    //blur
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.bfbo);
+    boxShader->use();
+    glBindTextureUnit(0, shadowMap.tex);
+    glViewport(0,0, 2048, 2048);
+    boxShader->setUniform("tex", 0);
+    boxShader->setUniform("sampleSize", glm::vec2(1.f / 2048, 1.f / 2048));
+    renderQuad();
+
+    glGenerateTextureMipmap(shadowMap.btex);
+
+
+}
+
+
+
+/*
 void Renderer::renderPass(Pass *pass) {
 
     if (pass->setup) {
@@ -438,8 +437,11 @@ void Renderer::renderPass(Pass *pass) {
         renderPass(pp);
     }
 
-}
 
+
+}
+ */
+/*
 void Renderer::renderPass(ScenePass *pass) {
 
     for(auto &batch : dynamicBatches) {
@@ -475,12 +477,31 @@ void Renderer::renderPass(PostPass *postPass) {
     }
 
 }
-
+*/
 void Renderer::setCamera(const Camera &cam) {
     setProjection(cam.proj);
     setView(cam.view);
     setEyePos(cam.pos);
     shadowMap.computeProjections(cam, glm::normalize(glm::vec3(-1, -1, 0)));
+}
+
+void Renderer::renderBatches(PassInfo &pass) {
+    for(auto& batch : dynamicBatches) {
+        renderBatch(batch, pass);
+    }
+    for(auto& batch : staticBatches) {
+        renderBatch(batch, pass);
+    }
+}
+
+void Renderer::renderQuad() {
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDrawArrays(GL_POINTS, 0, 1);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
 }
 
 
