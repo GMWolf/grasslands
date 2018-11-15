@@ -349,7 +349,7 @@ void Renderer::render(float time) {
     volumetricShader->setUniform("invMat", glm::inverse(proj * view));
     volumetricShader->setUniform("eyePos", eyePos);
     volumetricShader->setUniform("shadowVP", shadowMap.projection * shadowMap.view);
-    glBindTextureUnit(0, shadowMap.tex);
+    glBindTextureUnit(0, shadowMap.btex);
     volumetricShader->setUniform("shadowMap", 0);
     glBindTextureUnit(1, pingPong.getBackTexture());
     volumetricShader->setUniform("inColour", 1);
@@ -393,8 +393,9 @@ void Renderer::shadowPass() {
     passInfo.projection = shadowMap.projection;
     passInfo.view = shadowMap.view;
 
+
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.fbo);
-    glClearColor(0,0,0,1);
+    glClearColor(1,1,1,1);
     glClearDepth(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0,0, 2048, 2048);

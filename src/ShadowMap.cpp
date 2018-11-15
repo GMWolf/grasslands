@@ -28,7 +28,7 @@ void ShadowMap::computeProjections(const Camera &cam, const glm::vec3 &lightdir)
     centroid /= 8;
 
     //compute view
-    glm::vec3 lightPos = centroid - (lightdir *cam.farPlane);
+    glm::vec3 lightPos = centroid - (lightdir * cam.farPlane);
 
     view = glm::lookAt(lightPos, centroid, glm::normalize(glm::cross(glm::normalize(glm::cross(lightdir, glm::vec3(0,1,0))), lightdir)));
 

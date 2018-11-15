@@ -24,8 +24,6 @@ uniform float time;
 
 #include "../shaders/shadow.glsl"
 
-#include "../shaders/noise.glsl"
-
 void main() {
 
     outColor = texelFetch(inColour, ivec2(size * IN.texCoord), 0);
@@ -43,7 +41,7 @@ void main() {
 
     float camDist = length(d);
 
-    normalize(d);
+    d /= camDist;
 
     float stepl = (30.0f / SAMPLES);
     vec3 step = d * stepl;

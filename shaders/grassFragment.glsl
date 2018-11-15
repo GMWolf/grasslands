@@ -137,7 +137,7 @@ void main()
         L = -L;
         float intensity = l.colorI.w * (max(l.posRad.w - length(L), 0.0f) / l.posRad.w);
         L = normalize(L);
-        lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, translucency, l.colorI.xyz, intensity);
+        lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, translucency, l.colorI.xyz, intensity * 0.8f);
     }
 
     outColor = vec4(lightAccumulation, Alpha);
