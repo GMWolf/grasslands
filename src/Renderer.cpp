@@ -10,23 +10,52 @@
 
 Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height) {
 
-
     //Temp light stuff
     glCreateBuffers(1, &lightBuffer);
+    glCreateBuffers(1, &lightIndexBuffer);
+    //glCreateBuffers(1, &lightStartEndBuffer);
 
     struct {
-        GLuint n = 100, pad0, pad1, pad2;
-        Light light[100];
+        GLuint n = 10, pad0, pad1, pad2;
+        Light light[10];
     } lightdata;
     for(int i = 0; i < lightdata.n; i++) {
-        lightdata.light[i].radius = 1;
-        lightdata.light[i].intensity = 1;
+        lightdata.light[i].radius = 5;
+        lightdata.light[i].intensity = 1.5;
         lightdata.light[i].color = glm::vec3(1, 1, 1);
-        lightdata.light[i].pos = glm::vec3(rand() / (float)RAND_MAX, rand() / (float)RAND_MAX, rand() / (float)RAND_MAX);
+        //lightdata.light[i].pos = (glm::vec3(rand() / (float)RAND_MAX - 0.5f, 0, rand() / (float)RAND_MAX - 0.5f) ) * 200.f;
+        lightdata.light[i].pos = glm::vec3(0, 0.5, 0);
     }
 
     glNamedBufferStorage(lightBuffer, sizeof(lightdata), &lightdata, 0);
+    GLuint tileCount = (((width + 15) / 16) * ((height + 15) / 16));
+    std::cout << "tile count" << tileCount << std::endl;
+    glNamedBufferStorage(lightIndexBuffer, tileCount * ((16 * sizeof(GLuint)) + sizeof(GLuint)), nullptr, 0);
+    //glNamedBufferStorage(lightStartEndBuffer, tileCount  * 2 * sizeof(GLuint), nullptr, 0);
 
+    lightCullShader = new Shader({
+            {GL_COMPUTE_SHADER, "../shaders/lightCulling.glsl"_preprocess}
+    });
+
+    ComputePass* lightCullPass = new ComputePass;
+    lightCullPass->shader = lightCullShader;
+    lightCullPass->x = (width + 15) / 16;
+    lightCullPass->y = (height + 15) / 16;
+    lightCullPass->z = 1;
+    lightCullPass->barrier = GL_ALL_BARRIER_BITS;
+    lightCullPass->setup=[this](){
+        //do light culling
+        lightCullShader->use();
+        lightCullShader->setUniform("depthMap", 0);
+        lightCullShader->setUniform("projection", proj);
+        lightCullShader->setUniform("viewProj", proj * view);
+        lightCullShader->setUniform("view", view);
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lightIndexBuffer);
+    };
+
+    passes.push_back(lightCullPass);
 
 
     scenePass = new ScenePass;
@@ -212,12 +241,16 @@ void Renderer::renderBatch(Batch &batch, ScenePass* pass) {
     shader->setUniform(shader->getUniformLocation("shadowVP"),shadowMap.pass.projection * shadowMap.pass.view);
     shader->setUniform("time", time);
 
+    shader->setUniform("tileCountX", (GLuint)((width + 15) / 16));
+    shader->setUniform("showLightDebug", showLightDebug);
+
 
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, batch.indirectBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch.transformBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, batch.materialIndexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch.matType.buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lightBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightIndexBuffer);
     GLenum prim = pass->shadowPass ? GL_TRIANGLES : batch.matType.primType;
 
     glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
@@ -373,6 +406,15 @@ void Renderer::renderPass(Pass *pass) {
 
     if (pass->setup) {
         pass->setup();
+    }
+
+    if (auto * p = dynamic_cast<ComputePass*>(pass)) {
+        p->shader->use();
+        glDispatchCompute(p->x, p->y, p->z);
+        if (p->barrier) {
+            glMemoryBarrier(p->barrier);
+        }
+        return;
     }
 
     if (pass->fbo) {

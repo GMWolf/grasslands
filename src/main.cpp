@@ -327,6 +327,10 @@ int main() {
         camera.update(window, dt);
         renderer.setCamera(camera);
 
+        renderer.showLightDebug = (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS);
+
+
+
         meshBuffer.bindVa();
         group.bind();
 

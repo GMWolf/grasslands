@@ -99,10 +99,6 @@ Mesh MeshBuffer::getMesh(const std::vector<vertexData> &vertices, const std::vec
     glNamedBufferSubData(vertexBuffer, baseVertex * sizeof(vertexData), vertices.size() * sizeof(vertexData), vertices.data());
     glNamedBufferSubData(elementBuffer, first * sizeof(GLushort), elements.size() * sizeof(GLushort), elements.data());
 
-
-    std::cout << "min: " << bboxMin.x << " " << bboxMin.y << " " << bboxMin.z << "\n";
-    std::cout << "max: " << bboxMax.x << " " << bboxMax.y << " " << bboxMax.z << "\n";
-
     return Mesh(this, index, bboxMin, bboxMax);
 }
 

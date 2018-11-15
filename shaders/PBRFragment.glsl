@@ -27,6 +27,15 @@ layout(std430, binding = 3) buffer LightDataBuffer {
   Light lights[];
 };
 
+struct TileLightData {
+    uint lightCount;
+    int visibleLightIndex[16];
+};
+
+layout(std430, binding = 4) readonly buffer VisibleLightBuffer {
+    TileLightData tileData[];
+};
+
 uniform sampler2DArray tex[8];
 uniform sampler2D shadowMap;
 
@@ -34,8 +43,8 @@ uniform mat4 shadowVP;
 
 uniform vec3 lightDir;
 uniform vec3 lightColour;
-
-
+uniform uint tileCountX;
+uniform bool showLightDebug;
 
 in Vertex {
     vec3 normal;
@@ -111,7 +120,7 @@ void main()
         L = -L;
         float intensity = l.colorI.w * (max(l.posRad.w - length(L), 0.0f) / l.posRad.w);
         L = normalize(L);
-        lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, metalic, l.colorI.xyz, l.colorI.w);
+        lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, metalic, l.colorI.xyz, intensity);
     }
     /*Light l = lights;
     L = IN.worldPos - l.posRad.xyz;
@@ -124,4 +133,14 @@ void main()
 
     vec3 ambient = vec3(0.05) * albedo * AO;
     outColor = vec4(lightAccumulation + ambient, 1.0);
+
+
+    ivec2 tilePos = ivec2(gl_FragCoord.xy) / ivec2(16,16);
+    uint tileIndex = tilePos.y * (tileCountX) + tilePos.x;
+
+    if (showLightDebug) {
+        outColor.xyz = vec3(tileData[tileIndex].lightCount / 16.0f ) ;
+    }
+
+   // outColor.xyz = vec3(tileIndex/ 5500.0f ) ;
 }

@@ -49,6 +49,16 @@ struct PostPass : public Pass {
 
 };
 
+struct ComputePass : public Pass {
+    ~ComputePass() override = default;
+
+    Shader* shader;
+
+    GLuint x, y, z;
+
+    GLenum barrier;
+};
+
 
 
 #endif //GRASSLANDS_PASS_H

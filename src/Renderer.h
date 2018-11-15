@@ -45,6 +45,7 @@ public:
     void renderPass(Pass* pass);
     void renderPass(ScenePass* pass);
     void renderPass(PostPass* postPass);
+    void renderPass(ComputePass* computePass);
 
     void renderBatch(Batch& batch, ScenePass* pass);
     void renderBatch(StaticBatch& batch, ScenePass* pass);
@@ -76,9 +77,12 @@ public:
 
     PingPong pingPong;
 
+
+    bool showLightDebug = false;
 private:
 
     GLuint lightBuffer;
+    GLuint lightIndexBuffer;
 
     void addOctreeNodes(OctreeNode& node);
 
@@ -90,8 +94,11 @@ private:
     Shader* boxShader;
     Shader* passShader;
     Shader* gradeShader;
+    Shader* lightCullShader;
 
     GLuint LUT;
+
+
 };
 
 
