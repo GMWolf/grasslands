@@ -22,9 +22,7 @@
 #include "ShadowMap.h"
 #include "PingPong.h"
 
-#define PASS_ALL ~0
-#define PASS_DEFAULT 1
-#define PASS_SHADOW 2
+#include "PassMask.h"
 
 struct Light {
     glm::vec3 pos;
@@ -38,7 +36,7 @@ struct PassInfo {
     glm::mat4 view;
 
     Shader* shaderOverride = nullptr;
-    int mask = ~0;
+    int mask = PASS_ALL;
 };
 
 class Renderer {

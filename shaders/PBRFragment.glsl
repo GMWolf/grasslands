@@ -8,10 +8,7 @@ struct material {
     ivec2 disp;
 };
 
-struct Light {
-  vec4 posRad;
-  vec4 colorI;
-};
+
 
 
 layout(std430, binding = 1) buffer MaterialIndexBuffer {
@@ -22,15 +19,14 @@ layout(std430, binding = 2) buffer MaterialDataBuffer {
     material materials[];
 };
 
-layout(std430, binding = 3) buffer LightDataBuffer {
+#include "../shaders/ForwardPlus.glsl"
+
+
+layout(std430, binding = 3) readonly buffer LightDataBuffer {
   uint lightCount, pad0, pad1, pad2;
   Light lights[];
 };
 
-struct TileLightData {
-    uint lightCount;
-    int visibleLightIndex[128];
-};
 
 layout(std430, binding = 4) readonly buffer VisibleLightBuffer {
     TileLightData tileData[];
@@ -43,8 +39,7 @@ uniform mat4 shadowVP;
 
 uniform vec3 lightDir;
 uniform vec3 lightColour;
-uniform uint tileCountX;
-uniform bool showLightDebug;
+
 
 in Vertex {
     vec3 normal;

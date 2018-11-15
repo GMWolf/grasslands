@@ -16,8 +16,8 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     //glCreateBuffers(1, &lightStartEndBuffer);
 
     struct {
-        GLuint n = 1000, pad0, pad1, pad2;
-        Light light[1000];
+        GLuint n = 150, pad0, pad1, pad2;
+        Light light[150];
     } lightdata;
     for(int i = 0; i < lightdata.n; i++) {
         lightdata.light[i].radius = 5;
@@ -131,7 +131,7 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
 
     //render indirect
     Shader* shader;
-    if (pass.mask == PASS_SHADOW) {
+    if (pass.mask & (PASS_SHADOW | PASS_DEPTH_NON_TRANSMISIVE | PASS_DEPTH_TRANSMISIVE)) {
         shader = batch.matType.depthShaderOverride ? batch.matType.depthShaderOverride : defaultDepthShader;
     } else {
         shader = batch.matType.shader;
@@ -293,17 +293,17 @@ void Renderer::render(float time) {
     PassInfo depthPassInfo;
     depthPassInfo.view = view;
     depthPassInfo.projection = proj;
-    depthPassInfo.mask = PASS_SHADOW;
+    depthPassInfo.mask = PASS_DEPTH_NON_TRANSMISIVE;
 
     pingPong.swap();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
     glClearDepth(1);
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(false, false, false, false);
-    renderBatches(depthPassInfo);
-    glColorMask(true, true, true, true);
 
+    renderBatches(depthPassInfo); //NON TRANSMISIVE
     glTextureBarrier();
+
 
     //DO light culling
     lightCullShader->use();
@@ -316,8 +316,14 @@ void Renderer::render(float time) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lightIndexBuffer);
     glDispatchCompute((width + 15) / 16, (height + 15) / 16, 1);
 
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
+
+    depthPassInfo.mask = PASS_DEPTH_TRANSMISIVE;
+    renderBatches(depthPassInfo); //TRANSMISIVE
+    glColorMask(true, true, true, true);
+
+
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
     //SHADOWS
     shadowPass();
@@ -332,6 +338,7 @@ void Renderer::render(float time) {
     PassInfo scenePass;
     scenePass.view = view;
     scenePass.projection = proj;
+    scenePass.mask = PASS_DEFAULT;
     renderBatches(scenePass);
 
 

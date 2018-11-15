@@ -166,6 +166,7 @@ int main() {
         mat1,mat2,mat3,mat4
     };
 
+
     Shader* grassShader = new Shader({
         {GL_VERTEX_SHADER,   "../shaders/grassVertex.glsl"_preprocess},
         {GL_FRAGMENT_SHADER, "../shaders/grassFragment.glsl"_preprocess}
@@ -194,7 +195,7 @@ int main() {
 
     MaterialType<GrassMatData> grassType(grassShader, 10);
     grassType.depthShaderOverride = grassShadowShader;
-    grassType.mask = ~PASS_SHADOW;
+    grassType.mask = PASS_DEFAULT | PASS_DEPTH_TRANSMISIVE;
     Material matGrass12 = grassType.addMaterial({grass12Albedo, grass12Normal, grass12RA, grass12Tr});
     Material matWeed11  = grassType.addMaterial({weed11Albedo, weed11Normal, weed11RA, weed11Tr});
     Material matThistle = grassType.addMaterial({thistle17Albedo, thistle17Normal, thistle17RA, thistle17Tr});
@@ -232,7 +233,7 @@ int main() {
         }
     }
 
-    /*
+
      for(int i = 0; i < 30000; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
@@ -274,7 +275,7 @@ int main() {
             objects.emplace_back(thistle, matThistle, t, true);
         }
     }
-*/
+
     std::vector<RenderObject*> rotateObjects;
 
     for(int i = 0; i < 200; i++) {

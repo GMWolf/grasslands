@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "glm.hpp"
+#include "PassMask.h"
 
 struct MaterialData {
     MaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp)
@@ -44,7 +45,7 @@ public:
     Material addMaterial(void* data);
 
     Shader* depthShaderOverride = nullptr;
-    int mask = ~0;
+    int mask = PASS_DEFAULT | PASS_SHADOW | PASS_DEPTH_NON_TRANSMISIVE;
 private:
     GLenum primType;
     GLuint nextID = 0;

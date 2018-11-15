@@ -40,7 +40,7 @@ void main() {
 
     //Compute minmax depth
     if (gl_LocalInvocationIndex == 0) {
-        minDepthi = 0xFFFFFFFF;
+        minDepthi = 0;//0xFFFFFFFF;
         maxDepthi = 0;
     }
 
@@ -50,7 +50,7 @@ void main() {
     depth = (0.5 * projection[3][2]) / (depth + 0.5 * projection[2][2] - 0.5);
 
     uint depthi = floatBitsToUint(depth);
-    atomicMin(minDepthi, depthi);
+    //atomicMin(minDepthi, depthi);
     atomicMax(maxDepthi, depthi);
 
     barrier();
