@@ -59,3 +59,7 @@ GLuint PingPong::getBackDepth() {
 GLuint PingPong::getDepth() {
     return swapped ? dTexA : dTexB;
 }
+
+GLuint PingPong::getBackFBO() {
+    return swapped? fboB : fboA;
+}

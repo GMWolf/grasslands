@@ -2,7 +2,8 @@
 
 //based on https://github.com/bcrusco/Forward-Plus-Renderer/blob/master/Forward-Plus/Forward-Plus/source/shaders/light_culling.comp.glsl
 
-uniform sampler2DMS depthMap;
+uniform sampler2DMS depthMapA;
+uniform sampler2DMS depthMapB;
 uniform mat4 projection;
 uniform mat4 viewProj;
 uniform mat4 view;
@@ -40,18 +41,22 @@ void main() {
 
     //Compute minmax depth
     if (gl_LocalInvocationIndex == 0) {
-        minDepthi = 0;//0xFFFFFFFF;
+        minDepthi = 0xFFFFFFFF;
         maxDepthi = 0;
     }
 
     barrier();
 
-    float depth = texelFetch(depthMap, texPos, 0).r;
-    depth = (0.5 * projection[3][2]) / (depth + 0.5 * projection[2][2] - 0.5);
+    float depthA = texelFetch(depthMapA, texPos, 0).r;
+    depthA = (0.5 * projection[3][2]) / (depthA + 0.5 * projection[2][2] - 0.5);
+    float depthB = texelFetch(depthMapB, texPos, 0).r;
+    depthB = (0.5 * projection[3][2]) / (depthB + 0.5 * projection[2][2] - 0.5);
 
-    uint depthi = floatBitsToUint(depth);
-    //atomicMin(minDepthi, depthi);
-    atomicMax(maxDepthi, depthi);
+    uint depthAi = floatBitsToUint(depthA);
+    uint depthBi = floatBitsToUint(min(depthA, depthB));
+
+    atomicMin(minDepthi, depthBi);
+    atomicMax(maxDepthi, depthAi);
 
     barrier();
 

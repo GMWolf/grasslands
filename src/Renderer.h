@@ -31,6 +31,21 @@ struct Light {
     float intensity;
 };
 
+struct LightData {
+    GLuint count;
+private: GLuint a,b,c;
+public:
+    Light lights[4096];
+
+    void addLight(Light light) {
+        lights[count++] = light;
+    }
+
+    void clear() {
+        count = 0;
+    }
+};
+
 struct PassInfo {
     glm::mat4 projection;
     glm::mat4 view;
@@ -61,8 +76,6 @@ public:
 
     void shadowPass();
 
-    int numObject = 0;
-
     glm::mat4 view;
     glm::mat4 proj;
     glm::vec3 eyePos;
@@ -84,10 +97,17 @@ public:
 
 
     bool showLightDebug = false;
+
+    LightData* lightData;
+
+    glm::vec3 sunDir = glm::vec3(1,1,0);
+    glm::vec3 sunCol = glm::vec3(4, 4, 3.25);
+
 private:
 
     GLuint lightBuffer;
     GLuint lightIndexBuffer;
+
 
     void addOctreeNodes(OctreeNode& node);
 
@@ -105,6 +125,19 @@ private:
     GLuint LUT;
 
 
+    void colorGradePass();
+
+    void volumetricPass();
+
+    void pingpongToScreen();
+
+    void renderLightDebug();
+
+    void scenePass();
+
+    void cullLights();
+
+    void depthPrepass();
 };
 
 

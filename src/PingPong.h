@@ -15,6 +15,8 @@ public:
 
     GLuint getFBO();
 
+    GLuint getBackFBO();
+
     void swap();
 
     GLuint fboA, fboB;

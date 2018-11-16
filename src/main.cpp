@@ -50,8 +50,6 @@ struct GrassMatData {
 };
 
 int main() {
-
-
     if (!glfwInit()) {
         return -1;
     }
@@ -206,9 +204,26 @@ int main() {
     glViewport(0, 0, width, height);
 
     Renderer renderer(width, height);
+    //setup lights
+    std::vector<glm::vec3> lightVel;
+    std::vector<float> lightAge;
+    renderer.lightData->clear();
+    for(int i = 0; i < 1024; i++) {
+        lightVel.emplace_back(glm::ballRand(1.f));
+        lightVel[i].y = abs(lightVel[i].y);
+        lightAge.emplace_back(5 * rand() / (float) RAND_MAX);
+        glm::vec2 pos = glm::diskRand(100.f);
+        renderer.lightData->addLight({
+            glm::vec3(pos.x, 0.5, pos.y),
+            2,
+            glm::vec3(1, 0.5, 0.05),
+            5
+        });
+    }
 
 
-    Camera camera(ratio, 60, 0.1, 100.f);
+
+    Camera camera(ratio, 60, 0.1, 75.f);
 
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
@@ -323,6 +338,29 @@ int main() {
         //Rotate
         for(auto o : rotateObjects) {
             o->transform.rot = glm::quat(glm::vec3(0, time / 2 ,0));
+        }
+
+        //move lights
+        for(int i = 0; i < 1024; i++) {
+            lightAge[i] -= dt;
+            if (lightAge[i] <= 0) {
+                glm::vec2 pos = glm::diskRand(100.f);
+                renderer.lightData->lights[i].pos = glm::vec3(pos.x, 0, pos.y);
+                lightVel[i] = glm::ballRand(1.f);
+                lightVel[i].y = abs(lightVel[i].y);
+                lightAge[i] = 5;
+            }
+
+            renderer.lightData->lights[i].pos += lightVel[i] * dt;
+            if (lightAge[i] > 4.5) {
+                renderer.lightData->lights[i].intensity = 5 * (5.f - lightAge[i]) / 0.5f;
+            } else if (lightAge[i] < 0.5) {
+                renderer.lightData->lights[i].intensity = 5 * (lightAge[i]) / 0.5f;
+            } else {
+                renderer.lightData->lights[i].intensity = 5;
+            }
+
+            lightVel[i] += glm::ballRand(1.f) * dt;
         }
 
         camera.update(window, dt);
