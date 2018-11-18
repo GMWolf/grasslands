@@ -21,7 +21,7 @@ out Vertex {
         float texSize;
 } OUT[];
 
-uniform float tessFactor = 5.0;
+uniform float tessFactor = 32.0;
 
 uniform mat4 MV;
 uniform mat4 projection;
@@ -73,7 +73,7 @@ void main() {
 
     gl_TessLevelInner[0] = max(gl_TessLevelOuter[0], max( gl_TessLevelOuter[1], gl_TessLevelOuter[2]));
 
-    OUT[gl_InvocationID].texSize = 20480 / depth;
+    OUT[gl_InvocationID].texSize = 1024 / depth;
 
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 

@@ -12,20 +12,39 @@
 #include "PassMask.h"
 
 struct MaterialData {
-    MaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp)
+    MaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram)
     : diffuseTex(diffuse),
       normalTex(normal),
-      RAMTex(ram),
-      dispTex(disp){
+      RAMTex(ram){
+    }
+
+    glm::ivec2 diffuseTex;
+    glm::ivec2 normalTex;
+    glm::ivec2 RAMTex;
+};
+
+struct alignas(8) DispMaterialData {
+    DispMaterialData(const Texture& diffuse, const Texture& normal, const Texture& ram, const Texture& disp, float dispHeight,
+            float matScale = 1, float heightScale = 1, bool normalsFromHeight = false)
+            : diffuseTex(diffuse),
+              normalTex(normal),
+              RAMTex(ram),
+              dispTex(disp),
+              dispHeight(dispHeight),
+              matScale(matScale),
+              heightScale(heightScale),
+              normalsFromHeight(normalsFromHeight){
     }
 
     glm::ivec2 diffuseTex;
     glm::ivec2 normalTex;
     glm::ivec2 RAMTex;
     glm::ivec2 dispTex;
+    float dispHeight;
+    float matScale;
+    float heightScale;
+    bool normalsFromHeight;
 };
-
-
 
 class baseMaterialType;
 struct Material {

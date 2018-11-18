@@ -12,13 +12,8 @@ in Vertex {
        float texSize;
 } IN[];
 
-out Vertex {
-        vec3 normal;
-        flat uint drawID;
-        vec2 texcoord;
-        vec3 viewVector;
-        vec3 worldPos;
-} OUT;
+noperspective out float depth;
+
 
 struct material {
      ivec2 diffuse;
@@ -86,11 +81,6 @@ void main() {
     vec2 tc2 = gl_TessCoord.z * IN[2].texcoord;
     vec2 texcoord = tc0 + tc1 + tc2;
 
-    vec3 vv0 = gl_TessCoord.x * IN[0].viewVector;
-    vec3 vv1 = gl_TessCoord.y * IN[1].viewVector;
-    vec3 vv2 = gl_TessCoord.z * IN[2].viewVector;
-    vec3 viewVector = vv0 + vv1 + vv2;
-
     float ts0 = gl_TessCoord.x * IN[0].texSize;
     float ts1 = gl_TessCoord.y * IN[1].texSize;
     float ts2 = gl_TessCoord.z * IN[2].texSize;
@@ -113,21 +103,5 @@ void main() {
     pos += normal * d * t.scale;
 
     gl_Position = MV * vec4(pos, 1.0);
-
-    if (mat.normalsFromHeight) {
-         vec2 d = vec2(0.005, 0);
-        float c = matTexture(mat.disp, texcoord * mat.heightScale).x;
-        float px = matTexture(mat.disp, texcoord * mat.heightScale + d.xy).x;
-        float py = matTexture(mat.disp, texcoord * mat.heightScale + d.yx).x;
-
-        OUT.normal = normalize(vec3(c - px, d.x, c - py));
-    } else {
-        OUT.normal = normal;
-    }
-
-
-    OUT.drawID = IN[0].drawID;
-    OUT.texcoord = /* vec2(1.0, 0.3);//*/texcoord;
-    OUT.viewVector = eyePos - pos;//viewVector;
-    OUT.worldPos = pos;
+    depth = gl_Position.z;
 }

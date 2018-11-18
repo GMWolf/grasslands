@@ -10,7 +10,7 @@ Batch::Batch(GLuint batchSize, MeshBuffer &mb, baseMaterialType& ma) : batchSize
 }
 
 
-StaticBatch::StaticBatch(std::vector<RenderObject*> &robj) : Batch(robj.size(), *robj[0]->mesh.buffer, *robj[0]->mat.type){
+StaticBatch::StaticBatch(std::vector<RenderObject*> &robj) : Batch(robj.size(), *robj[0]->mesh.buffer, *robj[0]->mat.type) {
 
     auto * commands = new ComputeCullCommand[batchSize];
     auto * materialIndices = new GLuint[batchSize];

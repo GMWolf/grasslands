@@ -2,7 +2,7 @@
 
 #define E 2.71827
 
-layout(triangles, fractional_even_spacing, ccw) in;
+layout(triangles, equal_spacing, ccw) in;
 
 in Vertex {
        vec3 normal;
@@ -21,15 +21,12 @@ out Vertex {
 } OUT;
 
 struct material {
-     ivec2 diffuse;
-     ivec2 normal;
-     ivec2 ram;
-     ivec2 disp;
-     float dispFactor;
-     float matScale;
-     float heightScale;
-     bool normalsFromHeight;
- };
+    ivec2 diffuse;
+    ivec2 normal;
+    ivec2 ram;
+    ivec2 disp;
+    float dispFactor;
+};
 
 
 struct Transform
@@ -106,7 +103,7 @@ void main() {
     float levels = textureQueryLevels(tex[mat.disp.x]);
     float lodLevel = levels - log2(texSize);
 
-    float d = matTextureLod(mat.disp, texcoord * mat.heightScale, 0/* lodLevel*/).x;
+    float d = matTextureLod(mat.disp, texcoord, 0/* lodLevel*/).x;
     d = (d * 2.0) - 1;
     d *= mat.dispFactor ;
 
@@ -114,16 +111,8 @@ void main() {
 
     gl_Position = MV * vec4(pos, 1.0);
 
-    if (mat.normalsFromHeight) {
-         vec2 d = vec2(0.005, 0);
-        float c = matTexture(mat.disp, texcoord * mat.heightScale).x;
-        float px = matTexture(mat.disp, texcoord * mat.heightScale + d.xy).x;
-        float py = matTexture(mat.disp, texcoord * mat.heightScale + d.yx).x;
+    OUT.normal = normal;
 
-        OUT.normal = normalize(vec3(c - px, d.x, c - py));
-    } else {
-        OUT.normal = normal;
-    }
 
 
     OUT.drawID = IN[0].drawID;

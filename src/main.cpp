@@ -101,6 +101,8 @@ int main() {
     Mesh thistle = ObjLoader::load(meshBuffer, "../models/thistle.obj");
     Mesh cube = ObjLoader::load(meshBuffer, "../cube.obj");
     Mesh quad = ObjLoader::load(meshBuffer, "../quad.obj");
+    Mesh subdiv = ObjLoader::load(meshBuffer, "../models/subdivquad.obj");
+
 
     Mesh meshes[] = {
             suzane, knot, box, gear
@@ -141,25 +143,38 @@ int main() {
     std::ifstream pbr_fragFile("../shaders/PBRFragment.glsl");
     std::string pbr_fragText("../shaders/PBRFragment.glsl"_preprocess);
 
-    /*Shader* pbrTesselateShader = new Shader({
+    Shader* pbrTesselateShader = new Shader({
         {GL_VERTEX_SHADER, pbrtess_vertexText},
         {GL_TESS_CONTROL_SHADER, pbr_contText},
         {GL_TESS_EVALUATION_SHADER, pbr_evalText},
-        {GL_FRAGMENT_SHADER, pbr_fragText}
-    });*/
+        {GL_FRAGMENT_SHADER, "../shaders/PBRTessFragment.glsl"_preprocess}
+    });
+    Shader* pbrTesselateDepthShader = new Shader({
+        {GL_VERTEX_SHADER, pbrtess_vertexText},
+        {GL_TESS_CONTROL_SHADER, pbr_contText},
+        {GL_TESS_EVALUATION_SHADER, "../shaders/PBRTessEvaluationDepth.glsl"_preprocess},
+        {GL_FRAGMENT_SHADER, "../shaders/depthFragment.glsl"_preprocess}
+    });
     Shader* pbrShader = new Shader({
         {GL_VERTEX_SHADER, pbr_vertexText},
         {GL_FRAGMENT_SHADER, pbr_fragText}
     });
 
     MaterialType<MaterialData> pbrType(pbrShader,10);
-    //MaterialType<MaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
-    Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM, RockHeight));
-    Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight));
-    Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM, TilesHeight));
-    Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM, MetalHeight));
-    Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM, GroundAlbedo));
+    MaterialType<DispMaterialData, GL_PATCHES> pbrTessType(pbrTesselateShader, 10);
+    pbrTessType.depthShaderOverride = pbrTesselateDepthShader;
+    Material mat1 = pbrType.addMaterial(MaterialData(RockDiffuse, RockNormal, RockRAM));
+    Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM));
+    Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM));
+    Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM));
 
+
+    Texture heightMap = loadDDS(group, "../textures/yosemite_hm.DDS");
+
+
+    Material matGround = pbrTessType.addMaterial(DispMaterialData(GroundAlbedo, GroundNormal, GroundRAM, heightMap, 1.f, 10.0f, 1.f, true));
+    //Material matGround = pbrTessType.addMaterial(DispMaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight, 0.02f));
+    //Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM));
     Material materials[] {
         mat1,mat2,mat3,mat4
     };
@@ -174,7 +189,6 @@ int main() {
         {GL_VERTEX_SHADER,   "../shaders/grassDepthVert.glsl"_preprocess},
         {GL_FRAGMENT_SHADER, "../shaders/grassDepthFrag.glsl"_preprocess}
     });
-
 
     Texture grass12Albedo = loadDDS(group, "../textures/Grass12/Grass12_albedo.DDS");
     Texture grass12Normal = loadDDS(group, "../textures/Grass12/Grass12_normal.DDS");
@@ -238,18 +252,19 @@ int main() {
     std::vector<RenderObject*> objptr;
     srand(10);
 
-    for(int i = -100; i < 100; i++) {
-        for(int j = -100; j < 100; j++) {
-            Transform t{};
-            t.pos = glm::vec3(i * 2, 0, j * 2);
-            t.scale = 1;
-            t.rot = glm::quat();
-            objects.emplace_back(quad, matGround, t, true);
-        }
-    }
+
+    Transform t{};
+    t.pos = glm::vec3(0, 0, 0);
+    t.scale = 10;
+    t.rot = glm::quat();
+    objects.emplace_back(subdiv, matGround, t);
 
 
-     for(int i = 0; i < 30000; i++) {
+    int grassCount = 30000;
+    int weedCount = 1000;
+    int thistleCount = 10000;
+
+    for(int i = 0; i < grassCount; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 0.5f;
@@ -263,7 +278,7 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 1000; i++) {
+    for(int i = 0; i < weedCount; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.4f + 0.6f;
@@ -277,7 +292,7 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 10000; i++) {
+    for(int i = 0; i < thistleCount; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.2f + 0.3f;

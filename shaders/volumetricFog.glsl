@@ -80,13 +80,14 @@ void main() {
         float s = shadowIntensity(pos);
         float n = 1;//clamp((1 + snoise(vec4(pos * 0.3, time))) * 0.5, 0, 1);
 
-        light +=  s * isamples * weight;// * pow(n, 0.5);
+        outColor.xyz *= 1.0 - ((1.0 - vec3(0.7, 0.7, 0.8)) * (2.0 / SAMPLES));
+        outColor.xyz += vec3(0.7, 0.7, 0.8) *  s * isamples * weight;// * pow(n, 0.5);
 
         pos += step;
        weight *= decay;
     }
 
-    light *= light;
+    //light *= light;
 
     //DO point lights in screen space
     /*for(int i = 0; i < tld.lightCount; i++) {
@@ -107,5 +108,5 @@ void main() {
 
     //light *= 0.5;
 
-    outColor  += vec4(vec3(0.7, 0.7, 0.8) * light, 0.0);
+  // outColor  += vec4(vec3(0.7, 0.7, 0.8) * light, 0.0);
 }

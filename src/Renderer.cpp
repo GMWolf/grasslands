@@ -136,7 +136,7 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
     shader->use();
 
     static const std::vector<int> tsamplers {
-            0, 1//, 2, 3, 4, 5, 6, 7
+            0, 1, 2//, 3, 4, 5, 6, 7
     };
 
     glBindTextureUnit(9, shadowMap.btex);

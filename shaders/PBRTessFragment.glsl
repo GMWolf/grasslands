@@ -5,6 +5,11 @@ struct material {
     ivec2 diffuse;
     ivec2 normal;
     ivec2 ram;
+    ivec2 disp;
+    float dispFactor;
+    float matScale;
+    float heightScale;
+    bool normalsFromHeight;
 };
 
 layout(std430, binding = 1) buffer MaterialIndexBuffer {
@@ -81,17 +86,28 @@ vec3 computeLight(vec3 L, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness,
 void main()
 {
     material mat = materials[materialIndex[IN.drawID]];
-    vec3 RAM = matTexture(mat.ram, IN.texcoord).xyz;
+    vec3 RAM = matTexture(mat.ram, IN.texcoord * mat.matScale).xyz;
     float roughness = RAM.x;
     float AO = RAM.y;
     float metalic = RAM.z;
-    vec3 albedo = matTexture(mat.diffuse, IN.texcoord).xyz;
+    vec3 albedo = matTexture(mat.diffuse, IN.texcoord * mat.matScale).xyz;
 
     vec3 N = normalize(IN.normal);
-    vec3 normalMap = matTexture(mat.normal, IN.texcoord).xyz * 2.0 - 1.0;
+    /*if (mat.normalsFromHeight) {
+        vec2 d = vec2(0.005, 0);
+        float c = matTexture(mat.disp, IN.texcoord * mat.heightScale).x;
+        float px = matTexture(mat.disp, IN.texcoord * mat.heightScale + d.xy).x;
+        float py = matTexture(mat.disp, IN.texcoord * mat.heightScale + d.yx).x;
+
+        vec3 n = normalize(vec3(px - c, d.x, py - c));
+        N = perturb_normal(N, IN.viewVector, IN.texcoord * mat.heightScale, n);
+    }*/
+
+    vec3 normalMap = matTexture(mat.normal, IN.texcoord * mat.matScale).xyz * 2.0 - 1.0;
     normalMap *= vec3(1,-1,1);
 
-    N = perturb_normal(N, IN.viewVector, IN.texcoord, normalMap);
+
+    N = perturb_normal(N, IN.viewVector, IN.texcoord , normalMap);
 
     vec3 V = normalize(IN.viewVector);
 

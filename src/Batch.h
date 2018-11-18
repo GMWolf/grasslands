@@ -29,6 +29,8 @@ struct Batch {
 
     GLuint batchSize;
 
+
+
     union {
         GLuint bufferObjects[4];
         struct {
