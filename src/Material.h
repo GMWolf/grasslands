@@ -64,7 +64,10 @@ public:
     Material addMaterial(void* data);
 
     Shader* depthShaderOverride = nullptr;
+    Shader* computeTransformShader = nullptr;
+
     int mask = PASS_DEFAULT | PASS_SHADOW | PASS_DEPTH_NON_TRANSMISIVE;
+    bool alphaToCoverage = false;
 private:
     GLenum primType;
     GLuint nextID = 0;

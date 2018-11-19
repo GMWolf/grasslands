@@ -49,6 +49,14 @@ StaticBatch::StaticBatch(std::vector<RenderObject*> &robj) : Batch(robj.size(), 
     glNamedBufferStorage(materialIndexBuffer, batchSize * sizeof(GLuint), materialIndices, 0);
     glNamedBufferStorage(transformBuffer, batchSize * sizeof(Transform), transforms, 0);
 
+    if (matType.computeTransformShader) {
+        matType.computeTransformShader->use();
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, transformBuffer);
+        glDispatchCompute(batchSize, 1, 1);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    }
+
+
     delete[] commands;
     delete[] materialIndices;
     delete[] transforms;

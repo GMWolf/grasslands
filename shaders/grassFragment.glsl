@@ -30,12 +30,15 @@ layout(std430, binding = 4) readonly buffer VisibleLightBuffer {
 };
 
 uniform sampler2DArray tex[8];
+uniform samplerCubeArray cubemaps[8];
 uniform sampler2D shadowMap;
 
 uniform mat4 shadowVP;
 
 uniform vec3 lightDir;
 uniform vec3 lightColour;
+
+uniform ivec2 radianceTex;
 
 in Vertex {
     vec3 normal;
@@ -77,7 +80,7 @@ vec3 computeLight(vec3 L, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness,
     vec3 radiance = colour * intensity;
 
     //translucency
-    float NdotLI = min(max(dot(-N, L), 0), 1);
+    float NdotLI = min(max(dot(-N, L), 0.0), 1);
 
     float EdotL = min(max(dot(V, -L), 0.0), 1);
 
@@ -89,6 +92,42 @@ vec3 computeLight(vec3 L, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness,
 }
 
 
+
+vec3 computeIBL(ivec2 ibl, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness, vec3 translucency) {
+
+
+    vec3 F = fresnel(max(dot(N, V), 0.0), F0);
+    float NDF = D_GGX(N, N, roughness);
+
+    vec3 L = -reflect(V, N);
+
+    float G = G_smith(N, V, L, roughness);
+
+    vec3 numerator = NDF * G * F;
+
+    float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+    vec3 specular = numerator / max(denom, 0.001);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+
+    float NdotL = max(dot(N, L), 0.0);
+
+    //translucency
+    float NdotLI = min(max(dot(-N, L), 0), 1);
+
+    float EdotL = min(max(dot(V, -L), 0.0), 1);
+
+    vec3 radiance = textureLod(cubemaps[ibl.x], vec4(L, ibl.y), 8 *  roughness * textureQueryLevels(cubemaps[ibl.x])).xyz * 0.25f;
+
+    vec3 bounce = (kD * albedo / PI + specular) * radiance * NdotL;
+
+    vec3 transmit = (EdotL * NdotLI) * translucency * albedo * textureLod(cubemaps[ibl.x], vec4(-L, ibl.y), 8.0 * roughness * textureQueryLevels(cubemaps[ibl.x])).xyz * 0.25;
+
+    return bounce + transmit;
+
+}
+
 void main()
 {
 
@@ -98,9 +137,14 @@ void main()
     float roughness = RA.r;
     float Alpha = RA.g;
 
-    if (Alpha < 0.45) {
+
+    float cutoff = 0.45;
+    if (Alpha < cutoff) {
         discard;
     }
+    //Alpha = (Alpha - cutoff) / (1 - cutoff);
+
+
 
     vec3 albedo = matTexture(mat.albedo, IN.texcoord).xyz;
     float albedoSize = length(albedo);
@@ -115,15 +159,15 @@ void main()
 
     vec3 V = normalize(IN.viewVector);
 
-
     vec3 F0 = vec3(0.04);
 
     vec3 L = normalize(lightDir);
 
     vec3 translucency = matTexture(mat.translucency, IN.texcoord).xyz;
 
-     float shadow = shadowIntensity(IN.worldPos + IN.normal * 0.001);
-    vec3 lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, translucency, lightColour, shadow);
+    float shadow = shadowIntensity(IN.worldPos + IN.normal * 0.001);
+    vec3 lightAccumulation = vec3(0,0,0);//computeIBL(radianceTex, N, V, F0, albedo,  roughness, translucency);
+    lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, translucency, lightColour, shadow);
 
     ivec2 tilePos = ivec2(gl_FragCoord.xy) / ivec2(16,16);
     uint tileIndex = tilePos.y * (tileCountX) + tilePos.x;

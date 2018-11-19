@@ -17,5 +17,6 @@
 
 Texture loadDDS(TextureGroup& group, const std::string filename);
 
+Texture brokenTexture(TextureGroup& group);
 
 #endif //GRASSLANDS_DDSLOAD_H

@@ -103,6 +103,8 @@ public:
     glm::vec3 sunDir = glm::vec3(1,1,0);
     glm::vec3 sunCol = glm::vec3(4, 4, 3.25);
 
+    Texture* skybox = nullptr;
+    Texture* radiance = nullptr;
 private:
 
     GLuint lightBuffer;
@@ -121,6 +123,7 @@ private:
     Shader* gradeShader;
     Shader* lightCullShader;
     Shader* lightDebugShader;
+    Shader* skyboxShader;
 
     GLuint LUT;
 

@@ -4,7 +4,7 @@
 
 #include "ShadowMap.h"
 #include <limits>
-#include <ext/matrix_transform.hpp>
+#include <gtc/matrix_transform.hpp>
 #include <iostream>
 
 void ShadowMap::computeProjections(const Camera &cam, const glm::vec3 &lightdir) {

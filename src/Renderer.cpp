@@ -91,6 +91,13 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         {GL_FRAGMENT_SHADER, "../shaders/lightDebug.glsl"_preprocess}
     });
 
+
+    skyboxShader = new Shader({
+        {GL_VERTEX_SHADER, quadVertText},
+        {GL_GEOMETRY_SHADER, quadGText},
+        {GL_FRAGMENT_SHADER, "../shaders/SkyboxFrag.glsl"_preprocess}
+    });
+
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -136,13 +143,19 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
     shader->use();
 
     static const std::vector<int> tsamplers {
-            0, 1, 2//, 3, 4, 5, 6, 7
+            0, 1, 2, 3, 4, 5, 6, 7
     };
 
     glBindTextureUnit(9, shadowMap.btex);
     shader->setUniform("projection", pass.projection);
     shader->setUniform("MV", pass.projection * pass.view);
     shader->setUniform("tex", tsamplers);
+    shader->setUniform("cubemaps", tsamplers);
+    if (radiance) {
+        shader->setUniform("radianceTex", (glm::ivec2)*radiance);
+    } else {
+        shader->setUniform("radianceTex", glm::ivec2(-1,-1));
+    }
 
     shader->setUniform("eyePos", eyePos);
     shader->setUniform("lightColour", sunCol);
@@ -162,7 +175,15 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightIndexBuffer);
     GLenum prim = batch.matType.primType;
 
+    if (batch.matType.alphaToCoverage) {
+        glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    }
+
     glMultiDrawElementsIndirect(prim, GL_UNSIGNED_SHORT, 0, batch.batchSize, 0);
+
+    if (batch.matType.alphaToCoverage) {
+        glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    }
 }
 
 void Renderer::renderBatch(StaticBatch &batch, PassInfo& pass) {
@@ -355,12 +376,30 @@ void Renderer::cullLights() {//DO light culling
 }
 
 void Renderer::scenePass() {//SCENE PASS
+
+
     pingPong.swap();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    //skybox
     glClearDepth(1);
     glClearColor(0.7, 0.7, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, width, height);
+
+    if (skybox) {
+        skyboxShader->use();
+        skyboxShader->setUniform("skybox", (glm::ivec2)*skybox);
+        skyboxShader->setUniform("invMat", glm::inverse(proj * view));
+        skyboxShader->setUniform("eyePos", eyePos);
+        static const std::vector<int> tsamplers {
+                0, 1, 2, 3, 4, 5, 6, 7
+        };
+        skyboxShader->setUniform("cubemaps", tsamplers);
+        renderQuad();
+
+    }
+
+
     PassInfo scenePass;
     scenePass.view = view;
     scenePass.projection = proj;

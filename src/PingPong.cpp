@@ -2,12 +2,14 @@
 // Created by b5023110 on 08/11/2018.
 //
 
+#include <iostream>
 #include "PingPong.h"
 
-PingPong::PingPong(int width, int height) {
+PingPong::PingPong(int width, int height) : fboA(width,height, 8), fboB(width,height, 8) {
 
-    const int samples = 4;
-
+    const int samples = 8;
+    std::cout << "yo" << std::endl;
+/*
     glGenFramebuffers(1, &fboA);
     glBindFramebuffer(GL_FRAMEBUFFER, fboA);
     glGenTextures(1, &dTexA);
@@ -34,10 +36,17 @@ PingPong::PingPong(int width, int height) {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, cTexB, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+*/
+    cTexA = fboA.addTexture(GL_RGBA8, GL_COLOR_ATTACHMENT0);
+    cTexB = fboB.addTexture(GL_RGBA8, GL_COLOR_ATTACHMENT0);
+
+    dTexA = fboA.addTexture(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
+    dTexB = fboB.addTexture(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
+    std::cout << "added textures" << std::endl;
 }
 
 GLuint PingPong::getFBO() {
-    return swapped ? fboA : fboB;
+    return (swapped ? fboA : fboB).fbo;
 }
 
 void PingPong::swap() {
@@ -61,5 +70,5 @@ GLuint PingPong::getDepth() {
 }
 
 GLuint PingPong::getBackFBO() {
-    return swapped? fboB : fboA;
+    return (swapped? fboB : fboA).fbo;
 }

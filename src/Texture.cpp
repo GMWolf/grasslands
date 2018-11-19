@@ -9,21 +9,24 @@
 Texture::Texture(TextureArray *textureArray, GLuint layer) : textureArray(textureArray), layer(layer) {
 }
 
-void Texture::setData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLenum type, const void * pixels) {
-    glTextureSubImage3D(textureArray->texture, level, x, y, layer, width, height, 1, format, type, pixels);
+void Texture::setData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLenum type, const void * pixels, int face) {
+
+    int facelayer = (textureArray->target == GL_TEXTURE_CUBE_MAP_ARRAY) ? (layer * 6 + face) : layer;
+    glTextureSubImage3D(textureArray->texture, level, x, y, facelayer, width, height, 1, format, type, pixels);
 }
 
-void Texture::setCompressedData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLsizei size, const void *data) {
-    glCompressedTextureSubImage3D(textureArray->texture, level, x, y, layer,width, height, 1, format, size, data);
+void Texture::setCompressedData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLsizei size, const void *data, int face) {
+    int facelayer = (textureArray->target == GL_TEXTURE_CUBE_MAP_ARRAY) ? (layer * 6 + face) : layer;
+    glCompressedTextureSubImage3D(textureArray->texture, level, x, y, facelayer, width, height, 1, format, size, data);
 }
 
 Texture::operator glm::ivec2() const{
     return {textureArray->unit, layer};
 }
 
-TextureArray::TextureArray(GLuint unit, GLsizei mipmaplevels, GLenum format, GLsizei width, GLsizei height, GLsizei layercount)
-    : unit(unit), width(width), height(height), nextLayer(0) {
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture);
+TextureArray::TextureArray(GLenum target, GLuint unit, GLsizei mipmaplevels, GLenum format, GLsizei width, GLsizei height, GLsizei layercount)
+    : target(target), unit(unit), width(width), height(height), nextLayer(0) {
+    glCreateTextures(target, 1, &texture);
 
     glTextureStorage3D(texture, mipmaplevels, format, width, height, layercount);
 
@@ -49,11 +52,11 @@ void TextureArray::bind() {
     glBindTextureUnit(unit, texture);
 }
 
-TextureArray &TextureGroup::getArray(GLsizei width, GLsizei height, GLsizei miplevels, GLenum format) {
-    auto dim = std::make_tuple(width, height, miplevels, format);
+TextureArray &TextureGroup::getArray(GLenum target, GLsizei width, GLsizei height, GLsizei miplevels, GLenum format) {
+    auto dim = std::make_tuple(target, width, height, miplevels, format);
     if(textureArrays.find(dim) == textureArrays.end()) {
         std::cout << "New Texture Array!" << std::endl;
-        textureArrays.emplace(dim, std::make_unique<TextureArray>(nextUnit++, miplevels, format, width, height, 32));
+        textureArrays.emplace(dim, std::make_unique<TextureArray>(target, nextUnit++, miplevels, format, width, height, 60));
     }
 
     return *textureArrays[dim];

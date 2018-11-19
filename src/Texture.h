@@ -20,8 +20,8 @@ public:
     GLuint layer;
     TextureArray* const textureArray;
 
-    void setData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLenum type, const void * pixels);
-    void setCompressedData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLsizei size, const void * data);
+    void setData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLenum type, const void * pixels, int face = 0);
+    void setCompressedData(GLint level, GLenum format, GLint x, GLint y, GLsizei width, GLsizei height, GLsizei size, const void * data, int face = 0);
 
     operator glm::ivec2() const;
 
@@ -33,7 +33,7 @@ private:
 class TextureArray {
     friend class Texture;
 public:
-    TextureArray(GLuint unit, GLsizei mipmaplevels, GLenum format, GLsizei width, GLsizei height, GLsizei layercount);
+    TextureArray(GLenum target, GLuint unit, GLsizei mipmaplevels, GLenum format, GLsizei width, GLsizei height, GLsizei layercount);
     ~TextureArray();
 
     Texture getTexture();
@@ -44,8 +44,8 @@ public:
     const GLsizei height;
 
     const GLuint unit;
+    const GLenum target;
 private:
-
 
     GLuint nextLayer = 0;
 
@@ -57,12 +57,12 @@ class TextureGroup {
 
 public:
 
-    TextureArray& getArray(GLsizei width, GLsizei height, GLsizei miplevels, GLenum format);
+    TextureArray& getArray(GLenum target,GLsizei width, GLsizei height, GLsizei miplevels, GLenum format);
     void bind();
 private:
     GLuint nextUnit = 0;
-    //tuple goes: width, height, mipmaplevel, format
-    std::map<std::tuple<GLsizei, GLsizei, GLsizei, GLenum >, std::unique_ptr<TextureArray>> textureArrays;
+    //tuple goes: target, width, height, mipmaplevel, format
+    std::map<std::tuple<GLenum, GLsizei, GLsizei, GLsizei, GLenum >, std::unique_ptr<TextureArray>> textureArrays;
 };
 
 

@@ -61,7 +61,7 @@ int main() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, 8);
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
@@ -169,12 +169,12 @@ int main() {
     Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM));
 
 
-    Texture heightMap = loadDDS(group, "../textures/yosemite_hm.DDS");
+    //Texture heightMap = loadDDS(group, "../textures/yosemite_hm.DDS");
 
 
-    Material matGround = pbrTessType.addMaterial(DispMaterialData(GroundAlbedo, GroundNormal, GroundRAM, heightMap, 1.f, 10.0f, 1.f, true));
+   // Material matGround = pbrTessType.addMaterial(DispMaterialData(GroundAlbedo, GroundNormal, GroundRAM, heightMap, 1.f, 10.0f, 1.f, true));
     //Material matGround = pbrTessType.addMaterial(DispMaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight, 0.02f));
-    //Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM));
+    Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM));
     Material materials[] {
         mat1,mat2,mat3,mat4
     };
@@ -189,6 +189,19 @@ int main() {
         {GL_VERTEX_SHADER,   "../shaders/grassDepthVert.glsl"_preprocess},
         {GL_FRAGMENT_SHADER, "../shaders/grassDepthFrag.glsl"_preprocess}
     });
+
+
+    /*Shader* heightmapPositionCompute = new Shader ({
+        {GL_COMPUTE_SHADER, "../shaders/ComputeTransformHeightmap.glsl"_preprocess}
+    });
+    heightMap.textureArray->bind();
+    heightmapPositionCompute->setUniform("tex", (int)heightMap.textureArray->unit);
+    heightmapPositionCompute->setUniform("layer", (GLuint)heightMap.layer);
+    heightmapPositionCompute->setUniform("texScale", 0.001f);
+    heightmapPositionCompute->setUniform("heightScale", 10.0f);*/
+
+    //Texture cubeMap = loadDDS(group, "../textures/skybox.dds");
+    //Texture radiance = loadDDS(group, "../textures/skybox_radiance.dds");
 
     Texture grass12Albedo = loadDDS(group, "../textures/Grass12/Grass12_albedo.DDS");
     Texture grass12Normal = loadDDS(group, "../textures/Grass12/Grass12_normal.DDS");
@@ -207,6 +220,8 @@ int main() {
 
     MaterialType<GrassMatData> grassType(grassShader, 10);
     grassType.depthShaderOverride = grassShadowShader;
+    grassType.alphaToCoverage = true;
+    //grassType.computeTransformShader = heightmapPositionCompute;
     grassType.mask = PASS_DEFAULT | PASS_DEPTH_TRANSMISIVE;
     Material matGrass12 = grassType.addMaterial({grass12Albedo, grass12Normal, grass12RA, grass12Tr});
     Material matWeed11  = grassType.addMaterial({weed11Albedo, weed11Normal, weed11RA, weed11Tr});
@@ -218,6 +233,11 @@ int main() {
     glViewport(0, 0, width, height);
 
     Renderer renderer(width, height);
+    //renderer.skybox = &cubeMap;
+    //renderer.radiance = &radiance;
+
+
+
     //setup lights
     std::vector<glm::vec3> lightVel;
     std::vector<float> lightAge;
@@ -243,7 +263,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     //glEnable(GL_FRAMEBUFFER_SRGB);
 
 
@@ -253,11 +273,16 @@ int main() {
     srand(10);
 
 
-    Transform t{};
-    t.pos = glm::vec3(0, 0, 0);
-    t.scale = 10;
-    t.rot = glm::quat();
-    objects.emplace_back(subdiv, matGround, t);
+    for(int i = -50; i < 50; i++) {
+        for(int j = -50; j < 50; j++) {
+            Transform t{};
+            t.pos = glm::vec3(i * 4, 0, j * 4);
+            t.scale = 2;
+            t.rot = glm::quat();
+            objects.emplace_back(quad, matGround, t);
+        }
+    }
+
 
 
     int grassCount = 30000;
@@ -382,6 +407,8 @@ int main() {
         renderer.setCamera(camera);
 
         renderer.showLightDebug = (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS);
+
+
 
 
 

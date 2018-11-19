@@ -6,6 +6,7 @@
 #define GRASSLANDS_PINGPONG_H
 
 #include "glad/glad.h"
+#include "FrameBuffer.h"
 
 class PingPong {
 public:
@@ -19,7 +20,8 @@ public:
 
     void swap();
 
-    GLuint fboA, fboB;
+    //GLuint fboA, fboB;
+    FrameBuffer fboA, fboB;
 
     GLuint cTexA, cTexB, dTexA, dTexB;
 

@@ -29,12 +29,15 @@ layout(std430, binding = 4) readonly buffer VisibleLightBuffer {
 };
 
 uniform sampler2DArray tex[8];
+uniform samplerCubeArray cubemaps[8];
 uniform sampler2D shadowMap;
 
 uniform mat4 shadowVP;
 
 uniform vec3 lightDir;
 uniform vec3 lightColour;
+
+uniform ivec2 radianceTex;
 
 
 in Vertex {
@@ -78,6 +81,33 @@ vec3 computeLight(vec3 L, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness,
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
+
+vec3 computeIBL(ivec2 ibl, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness, float metalic) {
+
+
+    vec3 F = fresnel(max(dot(N, V), 0.0), F0);
+    float NDF = D_GGX(N, N, roughness);
+
+    vec3 L = -reflect(V, N);
+
+    float G = G_smith(N, V, L, roughness);
+
+    vec3 numerator = NDF * G * F;
+
+    float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+    vec3 specular = numerator / max(denom, 0.001);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metalic;
+
+    float NdotL = max(dot(N, L), 0.0);
+
+    vec3 radiance = textureLod(cubemaps[ibl.x], vec4(L, ibl.y), 8 *  roughness * textureQueryLevels(cubemaps[ibl.x])).xyz * 0.25;
+    return (kD * albedo / PI + specular) * radiance * NdotL;
+
+}
+
 void main()
 {
     material mat = materials[materialIndex[IN.drawID]];
@@ -102,7 +132,12 @@ void main()
 
     //do directional light
     float shadow = shadowIntensity(IN.worldPos + IN.normal * 0.001);
-    vec3 lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, metalic, lightColour, shadow);
+    vec3 lightAccumulation = vec3(0,0,0);
+    if (radianceTex.x != -1) {
+         lightAccumulation += computeIBL(radianceTex, N, V, F0, albedo, roughness, metalic);
+    }
+
+    lightAccumulation += computeLight(L, N, V, F0, albedo, roughness, metalic, lightColour, shadow);
     //lightAccumulation = vec3(0,0,0);
     //do all other lights
 
