@@ -146,7 +146,7 @@ void main()
 
     TileLightData tld = tileData[tileIndex];
 
-    for(uint i = 0; i < tld.lightCount; i++) {
+    for(uint i = 0; i < min(tld.lightCount, 16); i++) {
         Light l = lights[tld.visibleLightIndex[i]];
         L = IN.worldPos - l.posRad.xyz;
         L = -L;

@@ -86,7 +86,7 @@ vec3 computeLight(vec3 L, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness,
 
     vec3 bounce = (kD * albedo / PI + specular) * radiance * NdotL;
 
-    vec3 transmit = (EdotL * NdotLI) * translucency * radiance * albedo ;
+    vec3 transmit = (EdotL * NdotLI + (vec3(0.25) * albedo)) * translucency * radiance * albedo;
 
     return bounce + transmit;
 }
@@ -138,11 +138,11 @@ void main()
     float Alpha = RA.g;
 
 
-    float cutoff = 0.45;
+    float cutoff = 0.32;
     if (Alpha < cutoff) {
         discard;
     }
-    //Alpha = (Alpha - cutoff) / (1 - cutoff);
+    Alpha = (Alpha - cutoff) / (1 - cutoff);
 
 
 
@@ -155,7 +155,7 @@ void main()
     vec3 normalMap = normalize(matTexture(mat.normal, IN.texcoord).xyz * 2.0 - 1.0);
     normalMap *= vec3(1,-1,1);
 
-    //N = perturb_normal(N, IN.viewVector, IN.texcoord, normalMap);
+    N = perturb_normal(N, IN.viewVector, IN.texcoord, normalMap);
 
     vec3 V = normalize(IN.viewVector);
 
@@ -166,8 +166,8 @@ void main()
     vec3 translucency = matTexture(mat.translucency, IN.texcoord).xyz;
 
     float shadow = shadowIntensity(IN.worldPos + IN.normal * 0.001);
-    vec3 lightAccumulation = vec3(0,0,0);//computeIBL(radianceTex, N, V, F0, albedo,  roughness, translucency);
-    lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, translucency, lightColour, shadow);
+    vec3 lightAccumulation = computeIBL(radianceTex, N, V, F0, albedo,  roughness, translucency);
+    lightAccumulation = computeLight(L, N, V, F0, albedo, roughness, translucency, lightColour , shadow);
 
     ivec2 tilePos = ivec2(gl_FragCoord.xy) / ivec2(16,16);
     uint tileIndex = tilePos.y * (tileCountX) + tilePos.x;
@@ -175,7 +175,7 @@ void main()
     TileLightData tld = tileData[tileIndex];
 
 
-    for(uint i = 0; i < tld.lightCount; i++) {
+    for(uint i = 0; i < min(tld.lightCount, 16); i++) {
         Light l = lights[tld.visibleLightIndex[i]];
         L = IN.worldPos - l.posRad.xyz;
         L = -L;

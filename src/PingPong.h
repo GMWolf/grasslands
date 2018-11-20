@@ -10,13 +10,13 @@
 
 class PingPong {
 public:
-    PingPong(int width, int height);
+    PingPong(int width, int height, int samples);
 
     bool swapped = false;
 
-    GLuint getFBO();
+    FrameBuffer& getFBO();
 
-    GLuint getBackFBO();
+    FrameBuffer& getBackFBO();
 
     void swap();
 
@@ -32,6 +32,8 @@ public:
     GLuint getBackDepth();
 
     GLuint getDepth();
+
+    const int samples;
 };
 
 

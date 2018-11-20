@@ -3,8 +3,8 @@
 
 
 uniform sampler2D shadowMap;
-uniform sampler2DMS depthMap;
-uniform sampler2DMS inColour;
+uniform sampler2D depthMap;
+uniform sampler2D inColour;
 
 in vert {
     vec2 texCoord;
@@ -21,7 +21,7 @@ uniform vec2 size;
 
 uniform float time;
 
-#define SAMPLES 512
+#define SAMPLES 256
 
 #include "../shaders/shadow.glsl"
 #include "../shaders/ForwardPlus.glsl"
@@ -37,9 +37,9 @@ layout(std430, binding = 1) readonly buffer VisibleLightBuffer {
 
 void main() {
 
-    outColor = texelFetch(inColour, ivec2(size * IN.texCoord), 0);
+    outColor = texture(inColour, IN.texCoord);
 
-    float depth = texelFetch(depthMap, ivec2(size * IN.texCoord), 0).r;
+    float depth = texture(depthMap,IN.texCoord).r;
     depth = depth * 2.0 - 1.0;
     vec2 tc = IN.texCoord * 2.0 - 1.0;
     vec4 clipSpace = vec4(tc, depth, 1.0);
@@ -63,7 +63,7 @@ void main() {
 
     vec3 pos = eyePos;
 
-    float weight = 1.0;
+    float weight = 1.25;
     float decay = 0.9998;
 
     ivec2 tilePos = ivec2(gl_FragCoord.xy) / ivec2(16,16);
@@ -80,7 +80,7 @@ void main() {
         float s = shadowIntensity(pos);
         float n = 1;//clamp((1 + snoise(vec4(pos * 0.3, time))) * 0.5, 0, 1);
 
-        outColor.xyz *= 1.0 - ((1.0 - vec3(0.7, 0.7, 0.8)) * (2.0 / SAMPLES)) * weight;
+        outColor.xyz *= 1.0 - ((1.0 - vec3(0.7, 0.7, 0.8)) * (isamples)) * weight;
         outColor.xyz += vec3(0.7, 0.7, 0.8) *  s * isamples * weight;// * pow(n, 0.5);
 
         pos += step;

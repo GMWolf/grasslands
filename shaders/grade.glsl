@@ -1,7 +1,7 @@
 #version 430
 
 uniform sampler3D LUT;
-uniform sampler2DMS tex;
+uniform sampler2D tex;
 uniform vec2 size;
 
 uniform float lutSize;
@@ -14,7 +14,7 @@ out vec4 outColor;
 
 void main() {
 
-    vec3 inColour = texelFetch(tex, ivec2(size * IN.texCoord), 0).xyz;
+    vec3 inColour = texture(tex, IN.texCoord).xyz;
     float scale = (lutSize - 1.0) / lutSize;
     float offset = 1.0 / (2.0 * lutSize);
 

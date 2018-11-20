@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include "FrameBuffer.h"
+#include <algorithm>
 
 void check_error(const char *stmt) {
     GLenum err;
@@ -23,37 +24,64 @@ void check_error(const char *stmt) {
     } while (err);
 }
 
+FrameBuffer FrameBuffer::windowBuffer = FrameBuffer();
+
 GLuint FrameBuffer::addTexture(GLenum format, GLenum attachment) {
-    check_error("a");
+
 
     GLenum target = samples > 1 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
     GLuint tex;
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    check_error("b");
+
     glGenTextures(1, &tex);
-    check_error("c");
+
     glBindTexture(target, tex);
-    check_error("d");
+
 
     if (samples > 1) {
         glTexStorage2DMultisample(target, samples, format, width, height, false);
-        check_error("e");
     } else {
         glTexStorage2D(target, 1, format, width, height);
-        check_error("f");
    }
-
-
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, target, tex, 0);
-    check_error("g");
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    check_error("h");
-
     return tex;
 }
 
 FrameBuffer::FrameBuffer(int width, int height, int samples) : width(width), height(height), samples(samples) {
     glGenFramebuffers(1, &fbo);
-    std::cout << "fob is " << fbo << std::endl;
+}
+
+FrameBuffer::~FrameBuffer() {
+    release();
+}
+
+void FrameBuffer::release() {
+    glDeleteFramebuffers(1, &fbo);
+    fbo = 0;
+}
+
+FrameBuffer::FrameBuffer(FrameBuffer &&other) noexcept : fbo(other.fbo), samples(other.samples), width(other.width), height(other.height) {
+    other.fbo = 0;
+}
+
+FrameBuffer &FrameBuffer::operator=(FrameBuffer &&other) noexcept {
+    if (this != &other) {
+        release();
+        std::swap(fbo, other.fbo);
+    }
+    return *this;
+}
+
+void FrameBuffer::setDrawTarget() {
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+}
+
+void FrameBuffer::setReadTarget() {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+}
+
+void FrameBuffer::setTarget() {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 }

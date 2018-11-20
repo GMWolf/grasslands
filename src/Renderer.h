@@ -94,21 +94,27 @@ public:
     //CSM shadowMap;
 
     PingPong pingPong;
+    FrameBuffer OGBuffer;
 
 
     bool showLightDebug = false;
 
-    LightData* lightData;
+    std::vector<Light> lights;
 
     glm::vec3 sunDir = glm::vec3(1,1,0);
     glm::vec3 sunCol = glm::vec3(4, 4, 3.25);
 
     Texture* skybox = nullptr;
     Texture* radiance = nullptr;
+
+    LightData* lightData;
 private:
+
+    const Camera* cam;
 
     GLuint lightBuffer;
     GLuint lightIndexBuffer;
+
 
 
     void addOctreeNodes(OctreeNode& node);
@@ -141,6 +147,8 @@ private:
     void cullLights();
 
     void depthPrepass();
+
+    void updateLights();
 };
 
 

@@ -8,7 +8,10 @@
 #include "CUBELoader.h"
 
 
-Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height) {
+Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height, 1), OGBuffer(width, height, 8) {
+
+    OGBuffer.addTexture(GL_RGBA8, GL_COLOR_ATTACHMENT0);
+    OGBuffer.addTexture(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
 
     //Temp light stuff
     glCreateBuffers(1, &lightBuffer);
@@ -215,6 +218,8 @@ void Renderer::renderBatch(StaticBatch &batch, PassInfo& pass) {
 
     if(inside) {
         renderBatch(static_cast<Batch&>(batch), pass);
+    } else {
+        //std::cout << "culled " << batch.batchSize << " objects" << std::endl;
     }
 
 }
@@ -335,16 +340,15 @@ void Renderer::depthPrepass() {//Do first depth pass
 
     // Draw opaque to pingpong A
     pingPong.swap();
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    pingPong.getFBO().setDrawTarget();
     glClearDepth(1);
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(false, false, false, false);
 
     renderBatches(depthPassInfo); //NON TRANSMISSIVE
 
-
     // Draw transmissive to pingpong B
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getBackFBO());
+    pingPong.getBackFBO().setDrawTarget();
     glClearDepth(1);
     glClear(GL_DEPTH_BUFFER_BIT);
     PassInfo passInfo;
@@ -368,24 +372,19 @@ void Renderer::cullLights() {//DO light culling
     lightCullShader->setUniform("projection", proj);
     lightCullShader->setUniform("viewProj", proj * view);
     lightCullShader->setUniform("view", view);
+    lightCullShader->setUniform("size", glm::vec2(width, height));
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, lightIndexBuffer);
     glDispatchCompute((width + 15) / 16, (height + 15) / 16, 1);
 
-
 }
 
 void Renderer::scenePass() {//SCENE PASS
-
-
-    pingPong.swap();
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
-    //skybox
+    OGBuffer.setTarget();
     glClearDepth(1);
     glClearColor(0.7, 0.7, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, width, height);
-
     if (skybox) {
         skyboxShader->use();
         skyboxShader->setUniform("skybox", (glm::ivec2)*skybox);
@@ -399,12 +398,16 @@ void Renderer::scenePass() {//SCENE PASS
 
     }
 
-
     PassInfo scenePass;
     scenePass.view = view;
     scenePass.projection = proj;
     scenePass.mask = PASS_DEFAULT;
     renderBatches(scenePass);
+
+    //blit to pingpong
+    OGBuffer.setReadTarget();
+    pingPong.getFBO().setDrawTarget();
+    glBlitFramebuffer(0,0, OGBuffer.width, OGBuffer.height, 0, 0, pingPong.getFBO().width, pingPong.getFBO().height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 }
 
 void Renderer::renderLightDebug() {
@@ -416,7 +419,7 @@ void Renderer::renderLightDebug() {
 }
 
 void Renderer::pingpongToScreen() {//Push to screen
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    FrameBuffer::windowBuffer.setTarget();
     glClearColor(0, 0, 0, 1.0);
     glClearDepth(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -431,7 +434,7 @@ void Renderer::pingpongToScreen() {//Push to screen
 
 void Renderer::volumetricPass() {//Volumetric light pass
     pingPong.swap();
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    pingPong.getFBO().setTarget();
     volumetricShader->use();
     volumetricShader->setUniform("invMat", glm::inverse(proj * view));
     volumetricShader->setUniform("eyePos", eyePos);
@@ -452,7 +455,7 @@ void Renderer::volumetricPass() {//Volumetric light pass
 
 void Renderer::colorGradePass() {//Color correct pass
     pingPong.swap();
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pingPong.getFBO());
+    pingPong.getFBO().setTarget();
     gradeShader->use();
     gradeShader->setUniform("size", glm::vec2(width, height));
     glBindTextureUnit(0, pingPong.getBackTexture());
@@ -492,6 +495,7 @@ void Renderer::shadowPass() {
 }
 
 void Renderer::setCamera(const Camera &cam) {
+    this->cam = &cam;
     setProjection(cam.proj);
     setView(cam.view);
     setEyePos(cam.pos);
@@ -515,6 +519,44 @@ void Renderer::renderQuad() {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
+}
+
+void Renderer::updateLights() {
+
+
+    glm::vec4 frustumPlanes[6];
+    frustumPlanes[0] = glm::vec4(1.0, 0.0, 0.0, 1.0);
+    frustumPlanes[1] = glm::vec4(-1.0, 0.0, 0.0, -1.0 );
+    frustumPlanes[2] = glm::vec4(0.0, 1.0, 0.0, 1.0 );
+    frustumPlanes[3] = glm::vec4(0.0, -1.0, 0.0, -1.0);
+    frustumPlanes[4] = glm::vec4(0.0, 0.0, -1.0, -cam->nearPlane);
+    frustumPlanes[5] = glm::vec4(0.0, 0.0, 1.0, cam->farPlane);
+/*
+    for(int i = 0; i < 4; i++) {
+        frustumPlanes[i] *= view * proj;
+        frustumPlanes[i] /= glm::vec3(frustumPlanes[i]).length();
+    }
+
+    frustumPlanes[4] *= view;
+    frustumPlanes[4] /= glm::vec3(frustumPlanes[4]).length();
+    frustumPlanes[5] *= view;
+    frustumPlanes[5] /= glm::vec3(frustumPlanes[5]).length();
+
+    lightData->clear();
+
+    for(Light& l : lights) {
+        bool inside = true;
+        for(int j = 0; j < 6; j++) {
+            float dist = glm::dot(glm::vec4(l.pos, 1.0), frustumPlanes[j]) + l.radius;
+            inside = inside && (dist > 0.0f);
+        }
+
+        if (inside) {
+            lightData->addLight(l);
+        }
+
+    }
+*/
 }
 
 

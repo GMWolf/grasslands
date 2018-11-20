@@ -2,11 +2,12 @@
 
 //based on https://github.com/bcrusco/Forward-Plus-Renderer/blob/master/Forward-Plus/Forward-Plus/source/shaders/light_culling.comp.glsl
 
-uniform sampler2DMS depthMapA;
-uniform sampler2DMS depthMapB;
+uniform sampler2D depthMapA;
+uniform sampler2D depthMapB;
 uniform mat4 projection;
 uniform mat4 viewProj;
 uniform mat4 view;
+uniform vec2 size;
 
 shared uint minDepthi;
 shared uint maxDepthi;
@@ -35,7 +36,7 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 void main() {
 
     ivec2 tilePos = ivec2(gl_WorkGroupID.xy);
-    ivec2 texPos = ivec2(gl_GlobalInvocationID.xy);
+    vec2 texPos = vec2(gl_GlobalInvocationID.xy) / size;
     ivec2 tileNumber = ivec2(gl_NumWorkGroups.xy);
     uint tileIndex = tilePos.y * tileNumber.x + tilePos.x;
 
@@ -47,9 +48,9 @@ void main() {
 
     barrier();
 
-    float depthA = texelFetch(depthMapA, texPos, 0).r;
+    float depthA = texture(depthMapA, texPos).r;
     depthA = (0.5 * projection[3][2]) / (depthA + 0.5 * projection[2][2] - 0.5);
-    float depthB = texelFetch(depthMapB, texPos, 0).r;
+    float depthB = texture(depthMapB, texPos).r;
     depthB = (0.5 * projection[3][2]) / (depthB + 0.5 * projection[2][2] - 0.5);
 
     uint depthAi = floatBitsToUint(depthA);
@@ -109,6 +110,9 @@ void main() {
         if (inside) {
             uint offset = atomicAdd(tileData[tileIndex].lightCount, 1);
             tileData[tileIndex].visibleLightIndex[offset] = int(lightIndex);
+            if (offset >= tileData[tileIndex].visibleLightIndex.length()) {
+                break;
+            }
         }
 
     }

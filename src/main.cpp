@@ -15,6 +15,7 @@
 #include "Material.h"
 #include "gtc/random.hpp"
 #include "SETTINGS.h"
+#include "GUI.h"
 
 
 void error_callback(int error, const char *description) {
@@ -65,7 +66,8 @@ int main() {
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
-    window = glfwCreateWindow(1280, 720, "Grasslands", NULL/*glfwGetPrimaryMonitor()*/, NULL);
+    window = glfwCreateWindow(1280, 720, "Grasslands demo", NULL/*glfwGetPrimaryMonitor()*/, NULL);
+    //window = glfwCreateWindow(1920, 1200, "Grasslands", glfwGetPrimaryMonitor(), NULL);
 
 
     if (!window) {
@@ -200,8 +202,8 @@ int main() {
     heightmapPositionCompute->setUniform("texScale", 0.001f);
     heightmapPositionCompute->setUniform("heightScale", 10.0f);*/
 
-    //Texture cubeMap = loadDDS(group, "../textures/skybox.dds");
-    //Texture radiance = loadDDS(group, "../textures/skybox_radiance.dds");
+    Texture cubeMap = loadDDS(group, "../textures/skybox.dds");
+    Texture radiance = loadDDS(group, "../textures/skybox_radiance.dds");
 
     Texture grass12Albedo = loadDDS(group, "../textures/Grass12/Grass12_albedo.DDS");
     Texture grass12Normal = loadDDS(group, "../textures/Grass12/Grass12_normal.DDS");
@@ -233,16 +235,16 @@ int main() {
     glViewport(0, 0, width, height);
 
     Renderer renderer(width, height);
-    //renderer.skybox = &cubeMap;
-    //renderer.radiance = &radiance;
+    renderer.skybox = &cubeMap;
+    renderer.radiance = &radiance;
 
 
 
     //setup lights
     std::vector<glm::vec3> lightVel;
     std::vector<float> lightAge;
-    renderer.lightData->clear();
-    for(int i = 0; i < 1024; i++) {
+    const int lightCount = 512;
+    for(int i = 0; i < lightCount; i++) {
         lightVel.emplace_back(glm::ballRand(1.f));
         lightVel[i].y = abs(lightVel[i].y);
         lightAge.emplace_back(5 * rand() / (float) RAND_MAX);
@@ -253,6 +255,12 @@ int main() {
             glm::vec3(1, 0.5, 0.05),
             5
         });
+       /*renderer.lights.push_back({
+           glm::vec3(pos.x, 0.5, pos.y),
+           2,
+           glm::vec3(1, 0.5, 0.05),
+           5
+       });*/
     }
 
 
@@ -365,15 +373,22 @@ int main() {
     renderer.addObjects(objptr);
 
 
+    GUI gui(window);
     //Main loop
     float lastTime = glfwGetTime();
     float time = 0;
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
+        glfwPollEvents();
+
+
 
         float thisTime = glfwGetTime();
         float dt = thisTime - lastTime;
         lastTime = thisTime;
         time += dt;
+
+
+        gui.update(dt);
 
         //Rotate
         for(auto o : rotateObjects) {
@@ -381,7 +396,7 @@ int main() {
         }
 
         //move lights
-        for(int i = 0; i < 1024; i++) {
+        for(int i = 0; i < lightCount; i++) {
             lightAge[i] -= dt;
             if (lightAge[i] <= 0) {
                 glm::vec2 pos = glm::diskRand(100.f);
@@ -408,18 +423,16 @@ int main() {
 
         renderer.showLightDebug = (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS);
 
-
-
-
-
         meshBuffer.bindVa();
         group.bind();
 
         renderer.render(time);
 
+        gui.render();
         glfwSwapBuffers(window);
-        glfwPollEvents();
+
     }
+    nk_glfw3_shutdown();
 
     glfwDestroyWindow(window);
     glfwTerminate();
