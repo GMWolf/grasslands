@@ -31,6 +31,8 @@ public:
     void render();
 
 
+    bool viewTiles = false;
+
 private:
     nk_context* ctx;
 

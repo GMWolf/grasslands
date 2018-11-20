@@ -16,7 +16,6 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
     //Temp light stuff
     glCreateBuffers(1, &lightBuffer);
     glCreateBuffers(1, &lightIndexBuffer);
-    //glCreateBuffers(1, &lightStartEndBuffer);
 
     glNamedBufferStorage(lightBuffer, sizeof(LightData), nullptr, GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
     lightData = static_cast<LightData *>(glMapNamedBufferRange(lightBuffer, 0, sizeof(LightData), GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT));
@@ -333,6 +332,8 @@ void Renderer::render(float time) {
 }
 
 void Renderer::depthPrepass() {//Do first depth pass
+
+    glEnable(GL_DEPTH_TEST);
     PassInfo depthPassInfo;
     depthPassInfo.view = view;
     depthPassInfo.projection = proj;

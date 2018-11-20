@@ -5,6 +5,7 @@
 #define NK_IMPLEMENTATION
 #define NK_GLFW_GL3_IMPLEMENTATION
 #include "GUI.h"
+#include <string>
 
 GUI::GUI(GLFWwindow *window) {
     ctx = nk_glfw3_init(window, NK_GLFW3_INSTALL_CALLBACKS);
@@ -15,8 +16,15 @@ GUI::GUI(GLFWwindow *window) {
 
 void GUI::update(float ms) {
     nk_glfw3_new_frame();
-    if (nk_begin(ctx, "yo", nk_rect(50, 50, 230, 250),
-                 NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_TITLE)) {
+
+    float fps = 1 / ms;
+
+
+    if (nk_begin(ctx, ("fps: " + std::to_string((int)fps)).c_str(), nk_rect(50, 50, 150, 100),
+                 NK_WINDOW_MINIMIZABLE|NK_WINDOW_SCALABLE|NK_WINDOW_TITLE)) {
+        nk_layout_row_static(ctx, 30, 80, 1);
+        nk_checkbox_label(ctx, "View tiles", (int*)&viewTiles);
+
     }
     nk_end(ctx);
 }
