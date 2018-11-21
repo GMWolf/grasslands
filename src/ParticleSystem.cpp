@@ -24,7 +24,7 @@ ParticleSystem::ParticleSystem(size_t partCount) : partCount(partCount){
     partUData partu[partCount * 4];
     for(int i = 0; i < partCount * 4; i++) {
         partu[i].vel = glm::ballRand(0.001);
-        partu[i].age = (rand() / (float) RAND_MAX) * 5;
+        partu[i].age = (rand() / (float) RAND_MAX) * 0.6;
     }
 
     glNamedBufferStorage(partBuffer, partCount * sizeof(partUData), partu, 0);
@@ -49,7 +49,7 @@ void ParticleSystem::update(float dt) {
 
     computeShader->setUniform("spawnPoint", position);
     computeShader->setUniform("spawnRadius", 2.f);
-    computeShader->setUniform("life", 5.0f);
+    computeShader->setUniform("life", 0.6f);
     computeShader->setUniform("dt", dt);
     computeShader->setUniform("time", time);
     time += dt;

@@ -43,7 +43,7 @@ void main() {
 
     if (partUData[gl_GlobalInvocationID.x].age > life) {
         //repsawn particle
-        partUData[gl_GlobalInvocationID.x].age = 0;
+        partUData[gl_GlobalInvocationID.x].age = (1 + randAuto()) * 0.25;
         partUData[gl_GlobalInvocationID.x].vel = vec3(randAuto(), randAuto(), randAuto()) * 0.1;
         vec2 p = vec2(randAuto(), randAuto()) * spawnRadius;
          partVertData[gl_GlobalInvocationID.x].pos = spawnPoint + (vec3(p.x, 0, p.y));
@@ -53,7 +53,7 @@ void main() {
 
     partVertData[gl_GlobalInvocationID.x].pos += partUData[gl_GlobalInvocationID.x].vel * dt;
     partUData[gl_GlobalInvocationID.x].age += dt;
-    partUData[gl_GlobalInvocationID.x].vel += vec3(0, 0.2, 0) * dt;
+    partUData[gl_GlobalInvocationID.x].vel += vec3(0, 20, 0) * dt;
 
     partUData[gl_GlobalInvocationID.x].vel += vec3(randAuto(), randAuto(), randAuto()) * dt;
 

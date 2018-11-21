@@ -70,6 +70,7 @@ public:
     bool alphaToCoverage = false;
     GLenum blendSourceFactor = GL_BLEND_SRC_ALPHA;
     GLenum blendDestFactor = GL_ONE_MINUS_SRC_ALPHA;
+    bool cullBackfaces = true;
 private:
     GLenum primType;
     GLuint nextID = 0;

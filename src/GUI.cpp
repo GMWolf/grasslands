@@ -27,7 +27,7 @@ void GUI::update(float ms) {
     nk_end(ctx);
 
 
-    if (nk_begin(ctx, "Debug", nk_rect(5, 50, 200, 150),
+    if (nk_begin(ctx, "Debug", nk_rect(5, 50, 220, 150),
                  NK_WINDOW_MINIMIZABLE|NK_WINDOW_SCALABLE|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE)) {
         nk_layout_row_static(ctx, 0, 80, 1);
         nk_checkbox_label(ctx, "View tiles", &r.showLightDebug);
@@ -47,9 +47,10 @@ void GUI::update(float ms) {
         }
 
         std::stringstream pposstream;
-        pposstream << "playerpos: " << r.eyePos.x << " " << r.eyePos.z;
+        pposstream.precision(3);
+        pposstream << "playerpos  x:" << r.eyePos.x << " y:" << r.eyePos.z;
 
-
+        nk_layout_row_static(ctx, 0, 200, 1);
         nk_label(ctx, pposstream.str().c_str(), NK_TEXT_LEFT);
 
     }

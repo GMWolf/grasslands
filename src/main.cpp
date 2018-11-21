@@ -75,8 +75,8 @@ int main() {
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
-    window = glfwCreateWindow(1280, 720, "Grasslands demo", NULL/*glfwGetPrimaryMonitor()*/, NULL);
-    //window = glfwCreateWindow(1920, 1200, "Grasslands", glfwGetPrimaryMonitor(), NULL);
+    //window = glfwCreateWindow(1280, 720, "Grasslands demo", NULL/*glfwGetPrimaryMonitor()*/, NULL);
+    window = glfwCreateWindow(1920, 1200, "Grasslands", glfwGetPrimaryMonitor(), NULL);
 
 
     if (!window) {
@@ -108,7 +108,8 @@ int main() {
     Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
     Mesh grass = ObjLoader::load(meshBuffer, "../grass.obj");
-    Mesh grassClump = ObjLoader::load(meshBuffer, "../models/grassClump.obj");
+    Mesh grassA = ObjLoader::load(meshBuffer, "../models/grassA.obj");
+    //Mesh grassClump = ObjLoader::load(meshBuffer, "../models/grassClump.obj");
     Mesh thistle = ObjLoader::load(meshBuffer, "../models/thistle.obj");
     Mesh cube = ObjLoader::load(meshBuffer, "../cube.obj");
     Mesh quad = ObjLoader::load(meshBuffer, "../quad.obj");
@@ -232,6 +233,7 @@ int main() {
     MaterialType<GrassMatData> grassType(grassShader, 10);
     grassType.depthShaderOverride = grassShadowShader;
     grassType.alphaToCoverage = true;
+    //grassType.cullBackfaces = false;
     //grassType.computeTransformShader = heightmapPositionCompute;
     grassType.mask = PASS_DEFAULT | PASS_DEPTH_TRANSMISIVE;
     Material matGrass12 = grassType.addMaterial({grass12Albedo, grass12Normal, grass12RA, grass12Tr});
@@ -309,15 +311,11 @@ int main() {
     for(int i = 0; i < grassCount; i++) {
         Transform t{};
         glm::vec2 pos2D = glm::diskRand(100.f);
-        float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 0.5f;
-
-        for(int j = 0; j < 3; j++) {
-            glm::vec2 subpos2D = pos2D + glm::diskRand(1.f);
-            t.scale = clumpScale + (rand() / (float)RAND_MAX) * 0.1f - 0.05f;
-            t.pos = glm::vec3(subpos2D.x, 0, subpos2D.y);
-            t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
-            objects.emplace_back(grassClump, matGrass12, t, true);
-        }
+        float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 1.0f;
+        t.scale = clumpScale;
+        t.pos = glm::vec3(pos2D.x, 0, pos2D.y);
+        t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
+        objects.emplace_back(grassA, matGrass12, t, true);
     }
 
     for(int i = 0; i < weedCount; i++) {
@@ -387,8 +385,8 @@ int main() {
     Texture fireTexture = loadDDS(group, "../textures/fire.DDS");
 
     // Fire thing
-    for (int i = 0; i < 100; i++) {
-        renderer.particleSystems.emplace_back(1000);
+    for (int i = 0; i < 50; i++) {
+        renderer.particleSystems.emplace_back(2000);
         renderer.particleSystems.back().computeShader = fireCompute;
         renderer.particleSystems.back().texture = fireTexture;
         renderer.particleSystems.back().blendSourceFactor = GL_ONE;
@@ -397,7 +395,7 @@ int main() {
         renderer.particleSystems.back().position = glm::vec3(pos.x, 0, pos.y);
         renderer.lightData->addLight({
             glm::vec3(pos.x, 0.5, pos.y),
-            15,
+            10,
             glm::vec3(1, 0.6, 0.3),
             10
         });

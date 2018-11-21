@@ -142,6 +142,11 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
 
     batch.meshBuffer.bindVa();
     glBlendFunc(batch.matType.blendSourceFactor, batch.matType.blendDestFactor);
+    if (batch.matType.cullBackfaces) {
+        glEnable(GL_CULL_FACE);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
 
     //render indirect
     Shader* shader;
