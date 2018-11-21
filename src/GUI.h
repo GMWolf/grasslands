@@ -19,22 +19,40 @@
 #define NK_KEYSTATE_BASED_INPUT
 #include <nuklear/nuklear.h>
 #include <nuklear/nuklear_glfw_gl3.h>
-
+#include "Renderer.h"
+#include "CUBELoader.h"
 
 class GUI {
 
 public:
-    GUI(GLFWwindow* window);
+    GUI(GLFWwindow* window, Renderer& renderer);
 
     void update(float ms);
 
     void render();
-
-
-    bool viewTiles = false;
-
 private:
     nk_context* ctx;
+    Renderer& r;
+
+
+    std::string LUT = "Bourbon 64";
+
+    void loadLut(std::string& name);
+
+    std::string luts[12] {
+            "Bourbon 64",
+            "Django 25",
+            "Faded 47",
+            "Neon 770",
+            "Arabica 12",
+            "Chemical 168",
+            "Clouseau 54",
+            "Cubicle 99",
+            "Fusion 88",
+            "Paladin 1875",
+            "Sprocket 231",
+            "Tweed 71"
+    };
 
 };
 

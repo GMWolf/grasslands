@@ -13,7 +13,7 @@ default:break; \
 } \
 
 
-void Camera::update(GLFWwindow* window, float dt) {
+void Camera::update(GLFWwindow* window, float dt, bool mouse_active) {
 
     KEY_UPDATE(GLFW_KEY_LEFT, leftPressed);
     KEY_UPDATE(GLFW_KEY_A, leftPressed);
@@ -39,11 +39,13 @@ void Camera::update(GLFWwindow* window, float dt) {
     oldMouseX = xpos;
     oldMouseY = ypos;
 
-    look = glm::rotate(glm::mat4(1), cdy / 500, glm::vec3(-look[0])) * look;
-    look = glm::rotate(look, cdx / 500, glm::vec3(0,-1,0));
-
+    if (mouse_active) {
+        look = glm::rotate(glm::mat4(1), cdy / 500, glm::vec3(-look[0])) * look;
+        look = glm::rotate(look, cdx / 500, glm::vec3(0, -1, 0));
+    }
 
     view = glm::inverse(glm::translate(glm::mat4(1.0), pos) * look);
+
 }
 
 Camera::Camera(float ratio, float fov, float near, float far) : nearPlane(near), farPlane(far) {

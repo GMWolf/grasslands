@@ -36,15 +36,15 @@ void GLAPIENTRY MessageCallback( GLenum source,
 }
 
 bool shouldClose = false;
-bool activeMouse = true;
+bool mouse_active = true;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         shouldClose = true;
     }
     if (key == GLFW_KEY_T && action == GLFW_PRESS){
-       activeMouse ^= 1;
-       if (activeMouse) {
+       mouse_active ^= 1;
+       if (mouse_active) {
            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
        } else {
            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -382,7 +382,7 @@ int main() {
     renderer.addObjects(objptr);
 
 
-    GUI gui(window);
+    GUI gui(window, renderer);
     //Main loop
     float lastTime = glfwGetTime();
     float time = 0;
@@ -427,12 +427,9 @@ int main() {
             lightVel[i] += glm::ballRand(1.f) * dt;
         }
 
-        if (activeMouse) {
-            camera.update(window, dt);
-        }
-        renderer.setCamera(camera);
+        camera.update(window, dt, mouse_active);
 
-        renderer.showLightDebug = gui.viewTiles;
+        renderer.setCamera(camera);
 
         meshBuffer.bindVa();
         group.bind();

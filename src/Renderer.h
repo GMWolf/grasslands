@@ -97,7 +97,7 @@ public:
     FrameBuffer OGBuffer;
 
 
-    bool showLightDebug = false;
+    int showLightDebug = false;
 
     std::vector<Light> lights;
 
@@ -108,6 +108,9 @@ public:
     Texture* radiance = nullptr;
 
     LightData* lightData;
+
+    GLuint LUT;
+
 private:
 
     const Camera* cam;
@@ -131,7 +134,6 @@ private:
     Shader* lightDebugShader;
     Shader* skyboxShader;
 
-    GLuint LUT;
 
 
     void colorGradePass();

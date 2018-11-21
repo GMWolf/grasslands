@@ -15,7 +15,7 @@ public:
     Camera(float ratio, float fov, float near, float far);
 
 
-    void update(GLFWwindow* window, float dt);
+    void update(GLFWwindow* window, float dt, bool mouse_active);
 
 
     struct {
