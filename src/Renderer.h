@@ -21,8 +21,8 @@
 #include <map>
 #include "ShadowMap.h"
 #include "PingPong.h"
-
 #include "PassMask.h"
+#include "ParticleSystem.h"
 
 struct Light {
     glm::vec3 pos;
@@ -73,6 +73,8 @@ public:
     void renderBatches(PassInfo& pass);
     void renderQuad();
 
+    void renderParicleSystem(ParticleSystem& particleSystem, PassInfo& pass);
+
 
     void shadowPass();
 
@@ -111,6 +113,9 @@ public:
 
     GLuint LUT;
 
+
+    std::vector<ParticleSystem> particleSystems;
+
 private:
 
     const Camera* cam;
@@ -133,7 +138,7 @@ private:
     Shader* lightCullShader;
     Shader* lightDebugShader;
     Shader* skyboxShader;
-
+    Shader* partShader;
 
 
     void colorGradePass();

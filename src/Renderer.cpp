@@ -100,6 +100,12 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
         {GL_FRAGMENT_SHADER, "../shaders/SkyboxFrag.glsl"_preprocess}
     });
 
+    partShader = new Shader({
+        {GL_VERTEX_SHADER, "../shaders/ParticlesVert.glsl"_preprocess},
+        {GL_GEOMETRY_SHADER, "../shaders/ParticlesGeo.glsl"_preprocess},
+        {GL_FRAGMENT_SHADER, "../shaders/ParticlesFrag.glsl"_preprocess}
+    });
+
 }
 
 void Renderer::setView(const glm::mat4 &v) {
@@ -133,6 +139,9 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
     glDispatchCompute(batch.batchSize, 1, 1);
 
     glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+
+    batch.meshBuffer.bindVa();
+    glBlendFunc(batch.matType.blendSourceFactor, batch.matType.blendDestFactor);
 
     //render indirect
     Shader* shader;
@@ -251,6 +260,32 @@ void Renderer::renderBatch(DynamicBatch &batch, PassInfo& pass) {
     //change buffer id
     batch.bufferIndex = (batch.bufferIndex+1) % DynamicBatch::buffCount;
 }
+
+
+void Renderer::renderParicleSystem(ParticleSystem &particleSystem, PassInfo &pass) {
+
+    glBlendFunc(particleSystem.blendSourceFactor, particleSystem.blendDestFactor);
+    glEnable(GL_BLEND);
+    particleSystem.bindVA();
+
+    glDisable(GL_CULL_FACE);
+    glDepthMask(GL_FALSE);
+
+    partShader->use();
+    partShader->setUniform("VP", pass.projection * pass.view);
+    partShader->setUniform("pixelSize", glm::vec2(1.f/width, 1.f/height));
+    static const std::vector<int> tsamplers {0, 1, 2, 3, 4, 5, 6, 7};
+    partShader->setUniform("tex", tsamplers);
+    partShader->setUniform("t", (glm::ivec2)particleSystem.texture);
+
+    glDrawArrays(GL_POINTS, 0, particleSystem.partCount);
+
+    glEnable(GL_CULL_FACE);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+}
+
+
 
 void Renderer::addObjects(std::vector<RenderObject *> &renderObjects) {
 
@@ -404,6 +439,11 @@ void Renderer::scenePass() {//SCENE PASS
     scenePass.projection = proj;
     scenePass.mask = PASS_DEFAULT;
     renderBatches(scenePass);
+    for(ParticleSystem& part : particleSystems) {
+        part.update(0.01);
+        renderParicleSystem(part, scenePass);
+    }
+
 
     //blit to pingpong
     OGBuffer.setReadTarget();
@@ -559,5 +599,4 @@ void Renderer::updateLights() {
     }
 */
 }
-
 

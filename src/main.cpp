@@ -108,7 +108,7 @@ int main() {
     Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
     Mesh grass = ObjLoader::load(meshBuffer, "../grass.obj");
-    Mesh grassA = ObjLoader::load(meshBuffer, "../models/grassA.obj");
+    Mesh grassClump = ObjLoader::load(meshBuffer, "../models/grassClump.obj");
     Mesh thistle = ObjLoader::load(meshBuffer, "../models/thistle.obj");
     Mesh cube = ObjLoader::load(meshBuffer, "../cube.obj");
     Mesh quad = ObjLoader::load(meshBuffer, "../quad.obj");
@@ -250,27 +250,27 @@ int main() {
 
 
     //setup lights
-    std::vector<glm::vec3> lightVel;
-    std::vector<float> lightAge;
-    const int lightCount = 512;
-    for(int i = 0; i < lightCount; i++) {
-        lightVel.emplace_back(glm::ballRand(1.f));
-        lightVel[i].y = abs(lightVel[i].y);
-        lightAge.emplace_back(5 * rand() / (float) RAND_MAX);
-        glm::vec2 pos = glm::diskRand(100.f);
-        renderer.lightData->addLight({
-            glm::vec3(pos.x, 0.5, pos.y),
-            2,
-            glm::vec3(1, 0.5, 0.05),
-            5
-        });
-       /*renderer.lights.push_back({
-           glm::vec3(pos.x, 0.5, pos.y),
-           2,
-           glm::vec3(1, 0.5, 0.05),
-           5
-       });*/
-    }
+    //std::vector<glm::vec3> lightVel;
+    //std::vector<float> lightAge;
+    //const int lightCount = 512;
+    //for(int i = 0; i < lightCount; i++) {
+    //    lightVel.emplace_back(glm::ballRand(1.f));
+    //    lightVel[i].y = abs(lightVel[i].y);
+    //    lightAge.emplace_back(5 * rand() / (float) RAND_MAX);
+    //    glm::vec2 pos = glm::diskRand(100.f);
+    //    renderer.lightData->addLight({
+    //        glm::vec3(pos.x, 0.5, pos.y),
+    //        2,
+    //        glm::vec3(1, 0.5, 0.05),
+    //        5
+    //    });
+    //   /*renderer.lights.push_back({
+    //       glm::vec3(pos.x, 0.5, pos.y),
+    //       2,
+    //       glm::vec3(1, 0.5, 0.05),
+    //       5
+    //   });*/
+    //}
 
 
 
@@ -316,7 +316,7 @@ int main() {
             t.scale = clumpScale + (rand() / (float)RAND_MAX) * 0.1f - 0.05f;
             t.pos = glm::vec3(subpos2D.x, 0, subpos2D.y);
             t.rot = glm::quat(glm::vec3(0, (rand() / (float) RAND_MAX) * 2 * 3.14159, 0));
-            objects.emplace_back(grassA, matGrass12, t, true);
+            objects.emplace_back(grassClump, matGrass12, t, true);
         }
     }
 
@@ -357,7 +357,7 @@ int main() {
         glm::vec2 pos2D = glm::diskRand(100.f);
         t.pos = glm::vec3(pos2D.x, 5, pos2D.y);
         t.rot = glm::quat(glm::vec3(0, (rand() / (float)RAND_MAX) * 2 * 3.14159, 0));
-        t.scale = 5;
+        t.scale = 5 + (rand() / (float) RAND_MAX);
 
         objects.emplace_back(box, materials[rand() % 4], t, true);
     }
@@ -380,6 +380,29 @@ int main() {
     }
 
     renderer.addObjects(objptr);
+
+    Shader* fireCompute = new Shader ({
+        {GL_COMPUTE_SHADER, "../shaders/fireCompute.glsl"_preprocess}
+    });
+    Texture fireTexture = loadDDS(group, "../textures/fire.DDS");
+
+    // Fire thing
+    for (int i = 0; i < 100; i++) {
+        renderer.particleSystems.emplace_back(1000);
+        renderer.particleSystems.back().computeShader = fireCompute;
+        renderer.particleSystems.back().texture = fireTexture;
+        renderer.particleSystems.back().blendSourceFactor = GL_ONE;
+        renderer.particleSystems.back().blendDestFactor = GL_ONE;
+        glm::vec2 pos= glm::diskRand(100.0f);
+        renderer.particleSystems.back().position = glm::vec3(pos.x, 0, pos.y);
+        renderer.lightData->addLight({
+            glm::vec3(pos.x, 0.5, pos.y),
+            15,
+            glm::vec3(1, 0.6, 0.3),
+            10
+        });
+    }
+
 
 
     GUI gui(window, renderer);
@@ -405,7 +428,7 @@ int main() {
         }
 
         //move lights
-        for(int i = 0; i < lightCount; i++) {
+        /*for(int i = 0; i < lightCount; i++) {
             lightAge[i] -= dt;
             if (lightAge[i] <= 0) {
                 glm::vec2 pos = glm::diskRand(100.f);
@@ -425,7 +448,7 @@ int main() {
             }
 
             lightVel[i] += glm::ballRand(1.f) * dt;
-        }
+        }*/
 
         camera.update(window, dt, mouse_active);
 

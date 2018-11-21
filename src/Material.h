@@ -68,6 +68,8 @@ public:
 
     int mask = PASS_DEFAULT | PASS_SHADOW | PASS_DEPTH_NON_TRANSMISIVE;
     bool alphaToCoverage = false;
+    GLenum blendSourceFactor = GL_BLEND_SRC_ALPHA;
+    GLenum blendDestFactor = GL_ONE_MINUS_SRC_ALPHA;
 private:
     GLenum primType;
     GLuint nextID = 0;

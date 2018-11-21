@@ -6,6 +6,7 @@
 #define NK_GLFW_GL3_IMPLEMENTATION
 #include "GUI.h"
 #include <string>
+#include <sstream>
 
 GUI::GUI(GLFWwindow *window, Renderer& r) : r(r) {
     ctx = nk_glfw3_init(window, NK_GLFW3_INSTALL_CALLBACKS);
@@ -44,6 +45,12 @@ void GUI::update(float ms) {
             }
             nk_combo_end(ctx);
         }
+
+        std::stringstream pposstream;
+        pposstream << "playerpos: " << r.eyePos.x << " " << r.eyePos.z;
+
+
+        nk_label(ctx, pposstream.str().c_str(), NK_TEXT_LEFT);
 
     }
     nk_end(ctx);
