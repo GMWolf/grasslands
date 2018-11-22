@@ -8,7 +8,7 @@
 #include "CUBELoader.h"
 
 
-Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height, 1), OGBuffer(width, height, 8) {
+Renderer::Renderer(int width, int height) : width(width), height(height), shadowMap(2048), pingPong(width, height, 1), OGBuffer(width, height, 4) {
 
     OGBuffer.addTexture(GL_RGBA8, GL_COLOR_ATTACHMENT0);
     OGBuffer.addTexture(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
@@ -503,6 +503,7 @@ void Renderer::colorGradePass() {//Color correct pass
     glBindTextureUnit(1, LUT);
     gradeShader->setUniform("LUT", 1);
     gradeShader->setUniform("lutSize", 32.0f);
+    gradeShader->setUniform("light", cam->light);
     renderQuad();
 }
 
@@ -563,7 +564,7 @@ void Renderer::renderQuad() {
 
 void Renderer::updateLights() {
 
-
+/*
     glm::vec4 frustumPlanes[6];
     frustumPlanes[0] = glm::vec4(1.0, 0.0, 0.0, 1.0);
     frustumPlanes[1] = glm::vec4(-1.0, 0.0, 0.0, -1.0 );
@@ -571,7 +572,7 @@ void Renderer::updateLights() {
     frustumPlanes[3] = glm::vec4(0.0, -1.0, 0.0, -1.0);
     frustumPlanes[4] = glm::vec4(0.0, 0.0, -1.0, -cam->nearPlane);
     frustumPlanes[5] = glm::vec4(0.0, 0.0, 1.0, cam->farPlane);
-/*
+
     for(int i = 0; i < 4; i++) {
         frustumPlanes[i] *= view * proj;
         frustumPlanes[i] /= glm::vec3(frustumPlanes[i]).length();

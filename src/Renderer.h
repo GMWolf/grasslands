@@ -37,8 +37,9 @@ private: GLuint a,b,c;
 public:
     Light lights[4096];
 
-    void addLight(Light light) {
+    Light* addLight(Light light) {
         lights[count++] = light;
+        return &lights[count-1];
     }
 
     void clear() {

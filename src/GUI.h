@@ -25,7 +25,7 @@
 class GUI {
 
 public:
-    GUI(GLFWwindow* window, Renderer& renderer);
+    GUI(GLFWwindow* window, Renderer& renderer, Camera& cam);
 
     void update(float ms);
 
@@ -33,6 +33,7 @@ public:
 private:
     nk_context* ctx;
     Renderer& r;
+    Camera& cam;
 
 
 

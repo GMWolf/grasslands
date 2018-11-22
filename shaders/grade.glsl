@@ -5,6 +5,7 @@ uniform sampler2D tex;
 uniform vec2 size;
 
 uniform float lutSize;
+uniform float light = 1.0;
 
 in vert {
     vec2 texCoord;
@@ -18,5 +19,5 @@ void main() {
     float scale = (lutSize - 1.0) / lutSize;
     float offset = 1.0 / (2.0 * lutSize);
 
-    outColor = vec4(texture(LUT, offset + inColour * scale).rgb, 1.0);
+    outColor = vec4(texture(LUT, offset + inColour * scale).rgb, 1.0) * light;
 }

@@ -16,6 +16,7 @@
 #include "gtc/random.hpp"
 #include "SETTINGS.h"
 #include "GUI.h"
+#include "noise.h"
 
 
 void error_callback(int error, const char *description) {
@@ -75,15 +76,14 @@ int main() {
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
-    window = glfwCreateWindow(1280, 720, "Grasslands demo", NULL/*glfwGetPrimaryMonitor()*/, NULL);
-    //window = glfwCreateWindow(1920, 1200, "Grasslands", glfwGetPrimaryMonitor(), NULL);
+    //window = glfwCreateWindow(1280, 720, "Grasslands demo", NULL/*glfwGetPrimaryMonitor()*/, NULL);
+    window = glfwCreateWindow(1920, 1200, "Grasslands", glfwGetPrimaryMonitor(), NULL);
 
 
     if (!window) {
         glfwTerminate();
         return -1;
     }
-
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -116,7 +116,6 @@ int main() {
     Mesh quad = ObjLoader::load(meshBuffer, "../quad.obj");
    // Mesh subdiv = ObjLoader::load(meshBuffer, "../models/subdivquad.obj");
     Mesh platform = ObjLoader::load(meshBuffer, "../models/platform.obj");
-
 
     Texture RockDiffuse = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_albedo.DDS");
     Texture RockNormal = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_normal.DDS");
@@ -194,10 +193,7 @@ int main() {
     Material cobbleMat = pbrType.addMaterial(MaterialData(cobbleAlbedo, cobbleNormal, cobbleRAM));
 
 
-    //Texture heightMap = loadDDS(group, "../textures/yosemite_hm.DDS");
-
-
-   // Material matGround = pbrTessType.addMaterial(DispMaterialData(GroundAlbedo, GroundNormal, GroundRAM, heightMap, 1.f, 10.0f, 1.f, true));
+    //Material matGround = pbrTessType.addMaterial(DispMaterialData(GroundAlbedo, GroundNormal, GroundRAM, heightMap, 1.f, 10.0f, 1.f, true));
     //Material matGround = pbrTessType.addMaterial(DispMaterialData(BrickDiffuse, BrickNormal, BrickRAM, BrickHeight, 0.02f));
     Material matGround = pbrType.addMaterial(MaterialData(GroundAlbedo, GroundNormal, GroundRAM));
     Material materials[] {
@@ -214,16 +210,6 @@ int main() {
         {GL_VERTEX_SHADER,   "../shaders/grassDepthVert.glsl"_preprocess},
         {GL_FRAGMENT_SHADER, "../shaders/grassDepthFrag.glsl"_preprocess}
     });
-
-
-    /*Shader* heightmapPositionCompute = new Shader ({
-        {GL_COMPUTE_SHADER, "../shaders/ComputeTransformHeightmap.glsl"_preprocess}
-    });
-    heightMap.textureArray->bind();
-    heightmapPositionCompute->setUniform("tex", (int)heightMap.textureArray->unit);
-    heightmapPositionCompute->setUniform("layer", (GLuint)heightMap.layer);
-    heightmapPositionCompute->setUniform("texScale", 0.001f);
-    heightmapPositionCompute->setUniform("heightScale", 10.0f);*/
 
     Texture cubeMap = loadDDS(group, "../textures/skybox.dds");
     Texture radiance = loadDDS(group, "../textures/skybox_radiance.dds");
@@ -246,8 +232,6 @@ int main() {
     MaterialType<GrassMatData> grassType(grassShader, 10);
     grassType.depthShaderOverride = grassShadowShader;
     grassType.alphaToCoverage = true;
-    //grassType.cullBackfaces = false;
-    //grassType.computeTransformShader = heightmapPositionCompute;
     grassType.mask = PASS_DEFAULT | PASS_DEPTH_TRANSMISIVE;
     Material matGrass12 = grassType.addMaterial({grass12Albedo, grass12Normal, grass12RA, grass12Tr});
     Material matWeed11  = grassType.addMaterial({weed11Albedo, weed11Normal, weed11RA, weed11Tr});
@@ -262,32 +246,20 @@ int main() {
     renderer.skybox = &cubeMap;
     renderer.radiance = &radiance;
 
-
-
     //setup lights
-    //std::vector<glm::vec3> lightVel;
-    //std::vector<float> lightAge;
-    //const int lightCount = 512;
-    //for(int i = 0; i < lightCount; i++) {
-    //    lightVel.emplace_back(glm::ballRand(1.f));
-    //    lightVel[i].y = abs(lightVel[i].y);
-    //    lightAge.emplace_back(5 * rand() / (float) RAND_MAX);
-    //    glm::vec2 pos = glm::diskRand(100.f);
-    //    renderer.lightData->addLight({
-    //        glm::vec3(pos.x, 0.5, pos.y),
-    //        2,
-    //        glm::vec3(1, 0.5, 0.05),
-    //        5
-    //    });
-    //   /*renderer.lights.push_back({
-    //       glm::vec3(pos.x, 0.5, pos.y),
-    //       2,
-    //       glm::vec3(1, 0.5, 0.05),
-    //       5
-    //   });*/
-    //}
-
-
+    std::vector<glm::vec3> bugLightVel;
+    std::vector<Light*> bugLights;
+    const int lightCount = 256;
+    for(int i = 0; i < lightCount; i++) {
+        bugLightVel.emplace_back(glm::ballRand(1.f));
+        bugLightVel[i].y = 0;
+        glm::vec2 pos = glm::diskRand(100.f);
+        bugLights.push_back(
+                renderer.lightData->addLight({
+                    glm::vec3(pos.x, 0.5, pos.y), 2,
+                    glm::vec3(147, 228, 255) / 255.f, 10
+                }));
+    }
 
     Camera camera(ratio, 60, 0.1, 75.f);
 
@@ -315,7 +287,8 @@ int main() {
         }
     }
 
-
+    glm::vec2 altarPos(-6, -6);
+    float altarRad = 7;
 
     int grassCount = 30000;
     int weedCount = 1000;
@@ -323,7 +296,12 @@ int main() {
 
     for(int i = 0; i < grassCount; i++) {
         Transform t{};
-        glm::vec2 pos2D = glm::diskRand(100.f);
+        glm::vec2 pos2D;
+        do {
+            pos2D = glm::diskRand(100.f);
+        } while(glm::length(pos2D - altarPos) < altarRad);
+
+
         float clumpScale = (rand() / (float)RAND_MAX) * 0.3f + 1.0f;
         t.scale = clumpScale;
         t.pos = glm::vec3(pos2D.x, 0, pos2D.y);
@@ -333,7 +311,10 @@ int main() {
 
     for(int i = 0; i < weedCount; i++) {
         Transform t{};
-        glm::vec2 pos2D = glm::diskRand(100.f);
+        glm::vec2 pos2D;
+        do {
+            pos2D = glm::diskRand(100.f);
+        } while(glm::length(pos2D - altarPos) < altarRad);
         float clumpScale = (rand() / (float)RAND_MAX) * 0.4f + 0.6f;
 
         for(int j = 0; j < 5; j++) {
@@ -347,7 +328,11 @@ int main() {
 
     for(int i = 0; i < thistleCount; i++) {
         Transform t{};
-        glm::vec2 pos2D = glm::diskRand(100.f);
+        glm::vec2 pos2D;
+        do {
+            pos2D = glm::diskRand(100.f);
+        } while(glm::length(pos2D - altarPos) < altarRad);
+
         float clumpScale = (rand() / (float)RAND_MAX) * 0.2f + 0.3f;
 
         for(int j = 0; j < 3; j++) {
@@ -391,15 +376,17 @@ int main() {
                                       });
     Texture fireTexture = loadDDS(group, "../textures/fire.DDS");
 
+
+    std::vector<Light*> flickerLights;
     //add peak suzane
     {
         Transform t{};
-        t.pos = glm::vec3(-6,0, -6);
+        t.pos = glm::vec3(altarPos.x,0,altarPos.y);
         t.rot = glm::quat();
         t.scale = 1.5;
         objects.emplace_back(platform, cobbleMat, t);
 
-        t.pos.y = 2;
+        t.pos.y = 2.5;
         t.scale = 2;
 
         objects.emplace_back(peakSuzane, copperMat, t);
@@ -421,19 +408,16 @@ int main() {
             renderer.particleSystems.back().blendSourceFactor = GL_ONE;
             renderer.particleSystems.back().blendDestFactor = GL_ONE;
             renderer.particleSystems.back().position = glm::vec3(st.pos.x, 0, st.pos.z);
-            renderer.lightData->addLight({
-                glm::vec3(st.pos.x, 0.5, st.pos.z),
-                10,
-                glm::vec3(1, 0.6, 0.3),
-                10
-            });
+            flickerLights.push_back(
+                    renderer.lightData->addLight({
+                        glm::vec3(st.pos.x, 0.5, st.pos.z), 10,
+                        glm::vec3(1, 0.6, 0.3), 10
+                    }));
+
         }
 
 
     }
-
-
-
 
 
 
@@ -445,37 +429,12 @@ int main() {
     renderer.addObjects(objptr);
 
 
-
-    // Fire thing
-    /*for (int i = 0; i < 50; i++) {
-        renderer.particleSystems.emplace_back(1000);
-        renderer.particleSystems.back().computeShader = fireCompute;
-        renderer.particleSystems.back().texture = fireTexture;
-        renderer.particleSystems.back().blendSourceFactor = GL_ONE;
-        renderer.particleSystems.back().blendDestFactor = GL_ONE;
-        glm::vec2 pos= glm::diskRand(100.0f);
-        renderer.particleSystems.back().position = glm::vec3(pos.x, 0, pos.y);
-        renderer.lightData->addLight({
-            glm::vec3(pos.x, 0.5, pos.y),
-            10,
-            glm::vec3(1, 0.6, 0.3),
-            10
-        });
-    }*/
-
-
-
-
-
-
-    GUI gui(window, renderer);
+    GUI gui(window, renderer, camera);
     //Main loop
     float lastTime = glfwGetTime();
     float time = 0;
     while(!(glfwWindowShouldClose(window) || shouldClose)) {
         glfwPollEvents();
-
-
 
         float thisTime = glfwGetTime();
         float dt = thisTime - lastTime;
@@ -491,27 +450,16 @@ int main() {
         }
 
         //move lights
-        /*for(int i = 0; i < lightCount; i++) {
-            lightAge[i] -= dt;
-            if (lightAge[i] <= 0) {
-                glm::vec2 pos = glm::diskRand(100.f);
-                renderer.lightData->lights[i].pos = glm::vec3(pos.x, 0, pos.y);
-                lightVel[i] = glm::ballRand(1.f);
-                lightVel[i].y = abs(lightVel[i].y);
-                lightAge[i] = 5;
-            }
+        for(int i = 0; i < lightCount; i++) {
+            bugLights[i]->pos += bugLightVel[i] * dt;
+            bugLightVel[i] += glm::ballRand(1.f) * glm::vec3(1,0,1) * dt;
+        }
 
-            renderer.lightData->lights[i].pos += lightVel[i] * dt;
-            if (lightAge[i] > 4.5) {
-                renderer.lightData->lights[i].intensity = 5 * (5.f - lightAge[i]) / 0.5f;
-            } else if (lightAge[i] < 0.5) {
-                renderer.lightData->lights[i].intensity = 5 * (lightAge[i]) / 0.5f;
-            } else {
-                renderer.lightData->lights[i].intensity = 5;
-            }
-
-            lightVel[i] += glm::ballRand(1.f) * dt;
-        }*/
+        float seedOffset = 0;
+        for(Light* l : flickerLights) {
+            l->intensity = 8 + 5 * noise(time * 10 + seedOffset);
+            seedOffset += 50;
+        }
 
         camera.update(window, dt, mouse_active);
 
