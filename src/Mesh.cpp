@@ -9,8 +9,9 @@
 vertexData::vertexData(const glm::vec3 &p, const glm::vec3 &n, const glm::vec2 &t) {
     position = p;
     normal = n;
-    texcoords[0] = t[0] * 0xFFFF;
-    texcoords[1] = t[1] * 0xFFFF;
+    texcoords = t;
+    //texcoords[0] = glm::packHalf1x16(t.x);
+    //texcoords[1] = glm::packHalf1x16(t.y);
 }
 
 Mesh::Mesh(MeshBuffer* buffer, GLuint index, glm::vec3 bboxMin, glm::vec3 bboxMax) :
@@ -42,7 +43,7 @@ MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
     glVertexArrayAttribIFormat(vertexArray, 0, 1, GL_UNSIGNED_INT, 0); //DRAW ID
     glVertexArrayAttribFormat(vertexArray, 1, 3, GL_HALF_FLOAT, GL_FALSE, offsetof(vertexData, position)); //Position
     glVertexArrayAttribFormat(vertexArray, 2, 4, GL_INT_2_10_10_10_REV, GL_TRUE, offsetof(vertexData, normal)); //normal
-    glVertexArrayAttribFormat(vertexArray, 3, 2, GL_UNSIGNED_SHORT, GL_TRUE, offsetof(vertexData, texcoords)); //uv
+    glVertexArrayAttribFormat(vertexArray, 3, 2, GL_HALF_FLOAT, GL_FALSE, offsetof(vertexData, texcoords)); //uv
 
     //divisors
     glVertexArrayBindingDivisor(vertexArray, 0, 1);
@@ -67,7 +68,7 @@ MeshBuffer::MeshBuffer() : nextFirst(0), nextBaseVertex(0) {
     glVertexArrayElementBuffer(vertexArray, elementBuffer);
 
     //setup mesh data
-    GLuint meshCount = 10;
+    GLuint meshCount = 100;
     glNamedBufferStorage(meshDataBuffer, meshCount * sizeof(MeshData), nullptr, GL_DYNAMIC_STORAGE_BIT);
 }
 

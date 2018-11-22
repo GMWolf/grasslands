@@ -65,7 +65,7 @@ public:
     void setView(const glm::mat4& view);
     void setEyePos(const glm::vec3& pos);
 
-    void render(float time);
+    void render(float dt);
 
     void renderBatch(Batch& batch, PassInfo& pass);
     void renderBatch(StaticBatch& batch, PassInfo& pass);
@@ -149,7 +149,7 @@ private:
 
     void renderLightDebug();
 
-    void scenePass();
+    void scenePass(float dt);
 
     void cullLights();
 

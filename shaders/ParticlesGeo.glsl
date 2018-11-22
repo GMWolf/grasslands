@@ -8,6 +8,7 @@ layout(triangle_strip, max_vertices = 4) out;
 in Vertex {
     float size;
     vec3 colour;
+    float rot;
 }IN[];
 
 out Vertex {

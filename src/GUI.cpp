@@ -13,6 +13,7 @@ GUI::GUI(GLFWwindow *window, Renderer& r) : r(r) {
     nk_font_atlas* atlas;
     nk_glfw3_font_stash_begin(&atlas);
     nk_glfw3_font_stash_end();
+    loadLut(luts[0]);
 }
 
 void GUI::update(float ms) {

@@ -75,11 +75,6 @@ Renderer::Renderer(int width, int height) : width(width), height(height), shadow
 
 
 
-
-    //LUT = loadCubeLUT("../LUTs/Neon 770.CUBE");
-    //LUT = loadCubeLUT("../LUTs/Django 25.CUBE");
-    LUT = loadCubeLUT("../LUTs/Bourbon 64.CUBE");
-    //LUT = loadCubeLUT("../LUTs/Faded 47.CUBE");
     gradeShader = new Shader ({
             {GL_VERTEX_SHADER, quadVertText},
             {GL_GEOMETRY_SHADER, quadGText},
@@ -179,7 +174,6 @@ void Renderer::renderBatch(Batch &batch, PassInfo& pass) {
 
     shader->setUniform("shadowMap", 9);
     shader->setUniform("shadowVP",shadowMap.projection * shadowMap.view);
-    shader->setUniform("time", time);
 
     shader->setUniform("tileCountX", (GLuint)((width + 15) / 16));
 
@@ -344,9 +338,9 @@ void Renderer::addOctreeNodes(OctreeNode & node) {
 
 }
 
-void Renderer::render(float time) {
+void Renderer::render(float dt) {
 
-    this->time = time;
+    this->time += dt;
 
 
     depthPrepass();
@@ -358,7 +352,7 @@ void Renderer::render(float time) {
 
     shadowPass();
 
-    scenePass();
+    scenePass(dt);
 
     volumetricPass();
 
@@ -420,7 +414,7 @@ void Renderer::cullLights() {//DO light culling
 
 }
 
-void Renderer::scenePass() {//SCENE PASS
+void Renderer::scenePass(float dt) {
     OGBuffer.setTarget();
     glClearDepth(1);
     glClearColor(0.7, 0.7, 1.0, 1.0);
@@ -445,7 +439,7 @@ void Renderer::scenePass() {//SCENE PASS
     scenePass.mask = PASS_DEFAULT;
     renderBatches(scenePass);
     for(ParticleSystem& part : particleSystems) {
-        part.update(0.01);
+        part.update(dt);
         renderParicleSystem(part, scenePass);
     }
 

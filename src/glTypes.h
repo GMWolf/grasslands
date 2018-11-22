@@ -46,4 +46,21 @@ struct Vec3Half {
     }
 };
 
+struct Vec2Half {
+    GLhalf values[2];
+
+    Vec2Half& operator=(const glm::vec2& v) {
+        values[0] = glm::packHalf1x16(v.x);
+        values[1] = glm::packHalf1x16(v.y);
+        return *this;
+    }
+
+    operator glm::vec2() const {
+        return glm::vec2(
+            glm::unpackHalf1x16(values[0]),
+            glm::unpackHalf1x16(values[1])
+        );
+    }
+};
+
 #endif //GRASSLANDS_UTIL_H

@@ -75,8 +75,8 @@ int main() {
     glfwWindowHint(GLFW_SRGB_CAPABLE, true);
 
     //glfwGetPrimaryMonitor()
-    //window = glfwCreateWindow(1280, 720, "Grasslands demo", NULL/*glfwGetPrimaryMonitor()*/, NULL);
-    window = glfwCreateWindow(1920, 1200, "Grasslands", glfwGetPrimaryMonitor(), NULL);
+    window = glfwCreateWindow(1280, 720, "Grasslands demo", NULL/*glfwGetPrimaryMonitor()*/, NULL);
+    //window = glfwCreateWindow(1920, 1200, "Grasslands", glfwGetPrimaryMonitor(), NULL);
 
 
     if (!window) {
@@ -103,7 +103,8 @@ int main() {
     MeshBuffer meshBuffer;
     TextureGroup group;
 
-    Mesh suzane = ObjLoader::load(meshBuffer, "../suzane.obj");
+    Mesh suzane = ObjLoader::load(meshBuffer, "../models/suzane.obj");
+    Mesh peakSuzane = ObjLoader::load(meshBuffer, "../models/peak suzane.obj");
     Mesh knot = ObjLoader::load(meshBuffer, "../knot.obj");
     Mesh box = ObjLoader::load(meshBuffer, "../Box.obj");
     Mesh gear = ObjLoader::load(meshBuffer, "../gear.obj");
@@ -113,12 +114,9 @@ int main() {
     Mesh thistle = ObjLoader::load(meshBuffer, "../models/thistle.obj");
     Mesh cube = ObjLoader::load(meshBuffer, "../cube.obj");
     Mesh quad = ObjLoader::load(meshBuffer, "../quad.obj");
-    Mesh subdiv = ObjLoader::load(meshBuffer, "../models/subdivquad.obj");
+   // Mesh subdiv = ObjLoader::load(meshBuffer, "../models/subdivquad.obj");
+    Mesh platform = ObjLoader::load(meshBuffer, "../models/platform.obj");
 
-
-    Mesh meshes[] = {
-            suzane, knot, box, gear
-    };
 
     Texture RockDiffuse = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_albedo.DDS");
     Texture RockNormal = loadDDS(group, "../textures/RockJungle/Rock_CliffJungle3_normal.DDS");
@@ -143,6 +141,18 @@ int main() {
     Texture GroundAlbedo = loadDDS(group, "../textures/GroundForest3/GroundForest003_albedo_1.DDS");
     Texture GroundNormal = loadDDS(group, "../textures/GroundForest3/GroundForest003_normal.DDS");
     Texture GroundRAM    = loadDDS(group, "../textures/GroundForest3/GroundForest003_RAM.DDS");
+
+    Texture copperAlbedo = loadDDS(group, "../textures/copper/CopperPolished_albedo.DDS");
+    Texture copperNormal = loadDDS(group, "../textures/copper/CopperPolished_normal.DDS");
+    Texture copperRAM = loadDDS(group, "../textures/copper/CopperPolished_RAM.DDS");
+
+    Texture goreAlbedo = loadDDS(group, "../textures/gore/Gore_albedo.DDS");
+    Texture goreNormal = loadDDS(group, "../textures/gore/Gore_normal.DDS");
+    Texture goreRAM    = loadDDS(group, "../textures/gore/Gore_ram.DDS");
+
+    Texture cobbleAlbedo = loadDDS(group, "../textures/forest cobble/ForestCobblestone_albedo.DDS");
+    Texture cobbleNormal = loadDDS(group, "../textures/forest cobble/ForestCobblestone_normal.DDS");
+    Texture cobbleRAM = loadDDS(group, "../textures/forest cobble/ForestCobblestone_RAM.DDS");
 
     std::ifstream pbr_vertFile("../shaders/PBRVertex.glsl");
     std::string pbr_vertexText((std::istreambuf_iterator<char>(pbr_vertFile)), (std::istreambuf_iterator<char>()));
@@ -179,6 +189,9 @@ int main() {
     Material mat2 = pbrType.addMaterial(MaterialData(BrickDiffuse, BrickNormal, BrickRAM));
     Material mat3 = pbrType.addMaterial(MaterialData(TilesDiffuse, TilesNormal, TilesRAM));
     Material mat4 = pbrType.addMaterial(MaterialData(MetalDiffuse, MetalNormal, MetalRAM));
+    Material copperMat = pbrType.addMaterial(MaterialData(copperAlbedo, copperNormal, copperRAM));
+    Material goreMat = pbrType.addMaterial(MaterialData(goreAlbedo, goreNormal, goreRAM));
+    Material cobbleMat = pbrType.addMaterial(MaterialData(cobbleAlbedo, cobbleNormal, cobbleRAM));
 
 
     //Texture heightMap = loadDDS(group, "../textures/yosemite_hm.DDS");
@@ -373,20 +386,69 @@ int main() {
         rotateObjects.push_back(&objects.back());
     }
 
+    Shader* fireCompute = new Shader ({
+                                              {GL_COMPUTE_SHADER, "../shaders/fireCompute.glsl"_preprocess}
+                                      });
+    Texture fireTexture = loadDDS(group, "../textures/fire.DDS");
+
+    //add peak suzane
+    {
+        Transform t{};
+        t.pos = glm::vec3(-6,0, -6);
+        t.rot = glm::quat();
+        t.scale = 1.5;
+        objects.emplace_back(platform, cobbleMat, t);
+
+        t.pos.y = 2;
+        t.scale = 2;
+
+        objects.emplace_back(peakSuzane, copperMat, t);
+        rotateObjects.push_back(&objects.back());
+        //add minions
+        int n = 5;
+        for (int i = 0; i <n; i++) {
+            Transform st{};
+            st.pos = t.pos;
+            st.pos.x += sin(i * (3.14159 * 2 / n)) * 8;
+            st.pos.z += cos(i * (3.14159 * 2 / n)) * 8;
+            st.scale = 1;
+            st.rot = glm::quat(glm::vec3(0, 3.14159 + i * (3.14159 * 2 / n), 0));
+            objects.emplace_back(suzane, goreMat, st);
+
+            renderer.particleSystems.emplace_back(1000);
+            renderer.particleSystems.back().computeShader = fireCompute;
+            renderer.particleSystems.back().texture = fireTexture;
+            renderer.particleSystems.back().blendSourceFactor = GL_ONE;
+            renderer.particleSystems.back().blendDestFactor = GL_ONE;
+            renderer.particleSystems.back().position = glm::vec3(st.pos.x, 0, st.pos.z);
+            renderer.lightData->addLight({
+                glm::vec3(st.pos.x, 0.5, st.pos.z),
+                10,
+                glm::vec3(1, 0.6, 0.3),
+                10
+            });
+        }
+
+
+    }
+
+
+
+
+
+
     for(auto& o : objects) {
         objptr.emplace_back(&o);
     }
 
+
     renderer.addObjects(objptr);
 
-    Shader* fireCompute = new Shader ({
-        {GL_COMPUTE_SHADER, "../shaders/fireCompute.glsl"_preprocess}
-    });
-    Texture fireTexture = loadDDS(group, "../textures/fire.DDS");
+
 
     // Fire thing
-    for (int i = 0; i < 50; i++) {
-        renderer.particleSystems.emplace_back(2000);
+    /*for (int i = 0; i < 50; i++) {
+        renderer.particleSystems.emplace_back(1000);
         renderer.particleSystems.back().computeShader = fireCompute;
         renderer.particleSystems.back().texture = fireTexture;
         renderer.particleSystems.back().blendSourceFactor = GL_ONE;
@@ -399,7 +461,10 @@ int main() {
             glm::vec3(1, 0.6, 0.3),
             10
         });
-    }
+    }*/
+
+
+
 
 
 
@@ -455,7 +520,7 @@ int main() {
         meshBuffer.bindVa();
         group.bind();
 
-        renderer.render(time);
+        renderer.render(dt);
 
         gui.render();
         glfwSwapBuffers(window);

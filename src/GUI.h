@@ -35,11 +35,12 @@ private:
     Renderer& r;
 
 
-    std::string LUT = "Bourbon 64";
+
 
     void loadLut(std::string& name);
 
     std::string luts[12] {
+            "Tweed 71",
             "Bourbon 64",
             "Django 25",
             "Faded 47",
@@ -50,9 +51,10 @@ private:
             "Cubicle 99",
             "Fusion 88",
             "Paladin 1875",
-            "Sprocket 231",
-            "Tweed 71"
+            "Sprocket 231"
     };
+
+    std::string LUT = luts[0];
 
 };
 

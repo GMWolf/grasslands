@@ -19,8 +19,8 @@ struct vertexData {
     Vec3Half position;
     GLhalf pad; //16 * 4 -> 64 //padding for efficiency
     Vec3Int normal; //32
-    GLushort texcoords[2]; //16 * 2 -> 32
-
+    //GLhalf texcoords[2];
+    Vec2Half texcoords; //16 * 2 -> 32
 };
 
 struct MeshData {

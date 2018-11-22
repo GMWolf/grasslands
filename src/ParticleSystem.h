@@ -13,7 +13,7 @@
 #include "Texture.h"
 
 struct particleVertData {
-    glm::vec3 pos; float size; glm::vec3 colour; float pad;
+    glm::vec3 pos; float size; glm::vec3 colour; float rot;
 };
 
 struct partUData {
@@ -40,7 +40,7 @@ private:
     GLuint vertBuffer{};
     GLuint partBuffer{};
     GLuint vertexArray{};
-    float time;
+    float time = 0;
 
 
 };
