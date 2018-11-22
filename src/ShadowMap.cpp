@@ -47,56 +47,14 @@ void ShadowMap::computeProjections(const Camera &cam, const glm::vec3 &lightdir)
 
 }
 
-ShadowMap::ShadowMap(int resolution, float zNear, float zFar) : zNear(zNear), zFar(zFar), resolution(resolution) {
-
-
-    /*glCreateFramebuffers(1, &fbo);
-    glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-
-
-    glTextureStorage2D(fbo, 1, GL_DEPTH_COMPONENT, 2048, 2048);
-
-    glTextureParameterf(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-    glTextureParameterf(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+ShadowMap::ShadowMap(int resolution, float zNear, float zFar) : zNear(zNear), zFar(zFar), resolution(resolution),
+fbo(resolution, resolution, 1), blurFbo(resolution, resolution, 1){
 
 
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-
-
-    glNamedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, tex, 0);*/
-
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-    glGenTextures(1, &dtex);
-    glBindTexture(GL_TEXTURE_2D, dtex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dtex, 0);
-
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, resolution, resolution, 0, GL_RG, GL_FLOAT, 0);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
-
-
-    glGenFramebuffers(1, &bfbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, bfbo);
-
-    glGenTextures(1, &btex);
-    glBindTexture(GL_TEXTURE_2D, btex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, resolution, resolution, 0, GL_RG, GL_FLOAT, 0);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 8.0f);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, btex, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    dtex = fbo.addTexture(GL_DEPTH_COMPONENT32, GL_DEPTH_ATTACHMENT);
+    tex = fbo.addTexture(GL_RG16F, GL_COLOR_ATTACHMENT0);
+    btex = blurFbo.addTexture(GL_RG16F, GL_COLOR_ATTACHMENT0);
 }
 
 ShadowMap::~ShadowMap() {

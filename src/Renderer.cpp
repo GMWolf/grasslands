@@ -521,7 +521,7 @@ void Renderer::shadowPass() {
     passInfo.view = shadowMap.view;
 
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.fbo);
+    shadowMap.fbo.setTarget();
     glClearColor(1,1,1,1);
     glClearDepth(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -529,7 +529,7 @@ void Renderer::shadowPass() {
     renderBatches(passInfo);
 
     //blur
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowMap.bfbo);
+    shadowMap.blurFbo.setTarget();
     boxShader->use();
     glBindTextureUnit(0, shadowMap.tex);
     glViewport(0,0, 2048, 2048);

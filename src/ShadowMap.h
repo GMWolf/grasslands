@@ -8,6 +8,7 @@
 #include "glad/glad.h"
 #include "glm.hpp"
 #include "Camera.h"
+#include "FrameBuffer.h"
 #include <vector>
 
 class ShadowMap {
@@ -22,6 +23,10 @@ public:
 
     void computeProjections(const Camera& cam, const glm::vec3& lightdir);
 
+
+    FrameBuffer fbo;
+    FrameBuffer blurFbo;
+
     GLuint tex;
     GLuint dtex;
 
@@ -31,9 +36,6 @@ public:
     float zFar;
 
     int resolution;
-
-    GLuint fbo;
-    GLuint bfbo;
 
     glm::mat4 view, projection;
 };
