@@ -1,5 +1,5 @@
 # grasslands
-A tech demo I am working on.
+A tech demo
 
 youtube video:
 
